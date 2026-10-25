@@ -66,3 +66,26 @@ def test_existing_database_migrates_without_data_loss(monkeypatch,tmp_path):
     assert client.post('/api/auth/login',json={'username':'legacy','password':'Valid-password-123'}).status_code==200
     assert client.get('/api/auth/me').json()['user']['role']=='user'
     assert client.get('/api/admin/metrics').status_code==403
+
+
+def test_admin_search_filters_block_and_revocation():
+    admin=TestClient(app);uid=account(admin,'manager')
+    member=TestClient(app);member_id=account(member,'doctor')
+    with connect() as db: db.execute("UPDATE users SET role='admin' WHERE id=?",(uid,))
+    path=f'/api/admin/users/{member_id}/status'
+    assert member.patch(path,json={'status':'blocked'}).status_code==403
+    assert admin.patch(path,json={'status':'blocked'},headers={'Origin':'https://evil.example'}).status_code==403
+    assert admin.patch(f'/api/admin/users/{uid}/status',json={'status':'blocked'}).status_code==409
+    assert admin.patch(path,json={'status':'blocked','role':'admin'}).status_code==422
+    assert admin.patch(path,json={'status':'blocked'}).status_code==200
+    assert member.get('/api/plan').status_code==401
+    assert admin.get('/api/admin/users?q=DOCT&status=blocked').json()['total']==1
+    assert admin.get('/api/admin/users?q=%').json()['total']==0
+    assert admin.get('/api/admin/users?status=active').json()['total']==1
+    assert admin.get('/api/admin/users?offset=50').json()['users']==[]
+    assert admin.patch(path,json={'status':'active'}).status_code==200
+    assert member.get('/api/plan').status_code==401 # Unblocking must not revive revoked sessions.
+    assert member.post('/api/auth/login',json={'username':'doctor','password':'Valid-password-123'}).status_code==200
+    with connect() as db:
+        assert db.execute('SELECT COUNT(*) FROM admin_audit').fetchone()[0]==2
+    assert admin.patch('/api/admin/users/missing/status',json={'status':'blocked'}).status_code==404

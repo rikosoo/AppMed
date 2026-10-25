@@ -304,3 +304,4 @@ footer button { min-height: 44px; font-size: 12px; }
 .file-import summary { cursor: pointer; min-height: 44px; padding: 9px 0; }
 .file-import p { margin: 15px 0; }
 .file-import input { background: white; width: 100%; }
+.session-controls .admin-entry{font-size:11px;padding:6px;background:#eaf3df;border-radius:7px;margin-right:6px}

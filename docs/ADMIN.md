@@ -1,6 +1,6 @@
-# Administração e métricas — etapa 1
+# Administração e métricas
 
-Esta etapa prepara o banco e as consultas protegidas. A tela visual administrativa será a etapa 2.
+O painel responsivo está disponível em `/admin`. Entre com uma conta autorizada; contas comuns recebem acesso restrito. Há métricas, busca por usuário, filtro de situação, paginação e bloqueio/desbloqueio confirmado.
 
 ## Permissões
 
@@ -10,14 +10,15 @@ Toda conta nasce com papel `user`, inclusive a primeira. Não há senha administ
 sudo docker compose --env-file deploy/.env -f deploy/compose.prod.yml exec api python manage_admin.py SEU_USUARIO
 ```
 
-A operação fica registrada em `admin_audit`. As permissões são consultadas no banco em cada requisição; enviar um papel no navegador não concede acesso. Contas com status `blocked` não podem entrar e suas sessões deixam de autorizar operações. A interface para bloquear contas ainda não faz parte desta etapa.
+A operação fica registrada em `admin_audit`. As permissões são consultadas no banco em cada requisição; enviar um papel no navegador não concede acesso. Contas com status `blocked` não podem entrar e suas sessões deixam de autorizar operações. O bloqueio pelo painel encerra todas as sessões da conta e preserva seus dados. Desbloquear não restaura sessões antigas: o usuário precisa entrar novamente. Contas administrativas não podem ser bloqueadas pelo painel.
 
 ## Consultas
 
 - `GET /api/admin/metrics`: totais e métricas agregadas.
-- `GET /api/admin/users?limit=50&offset=0`: lista paginada, limite máximo 100.
+- `GET /api/admin/users?limit=50&offset=0&q=nome&status=active`: lista paginada e busca literal por usuário; situação opcional `active`/`blocked`, limite máximo 100.
+- `PATCH /api/admin/users/{id}/status` com `{"status":"blocked"}` ou `{"status":"active"}`: altera a situação, valida origem e registra auditoria. Não permite alterar papéis.
 
-São endpoints internos da API, exigem sessão de administrador e não retornam senhas, tokens ou planejamentos financeiros. A interface Next será conectada a eles na próxima etapa.
+São endpoints protegidos da API, encaminhados pelo Next; exigem sessão de administrador e não retornam senhas, tokens ou planejamentos financeiros. O acesso fica disponível no link Administração para contas autorizadas.
 
 ## Definições
 

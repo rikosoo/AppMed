@@ -134,7 +134,7 @@ def register(data:Credentials,request:Request,response:Response):
         except sqlite3.IntegrityError:
             raise HTTPException(409,'Este usuário já está cadastrado. Entre na sua conta ou escolha outro nome.')
         issue_session(response,user_id,db)
-    return {'user':{'id':user_id,'username':username}}
+    return {'user':{'id':user_id,'username':username,'role':'user'}}
 
 @router.post('/auth/login')
 def login(data:Credentials,request:Request,response:Response):
@@ -146,7 +146,7 @@ def login(data:Credentials,request:Request,response:Response):
         count=db.execute('SELECT COUNT(*) FROM login_failures WHERE username=? AND attempted_at>?',(username,now-900)).fetchone()[0]
         if count>=8:
             raise HTTPException(429,'Muitas tentativas. Aguarde 15 minutos antes de tentar novamente.',headers={'Retry-After':'900'})
-        user=db.execute('SELECT id,username,password_hash,status FROM users WHERE username=?',(username,)).fetchone()
+        user=db.execute('SELECT id,username,password_hash,status,role FROM users WHERE username=?',(username,)).fetchone()
         matches=password_matches(data.password,user['password_hash'] if user else DUMMY_HASH)
         if not user or not matches or user['status']!='active':
             db.execute('INSERT INTO login_failures VALUES (?,?)',(username,now))
@@ -154,7 +154,7 @@ def login(data:Credentials,request:Request,response:Response):
             raise HTTPException(401,'Usuário ou senha incorretos. Confira e tente novamente.')
         db.execute('DELETE FROM login_failures WHERE username=?',(username,))
         issue_session(response,user['id'],db)
-    return {'user':{'id':user['id'],'username':user['username']}}
+    return {'user':{'id':user['id'],'username':user['username'],'role':user['role']}}
 
 @router.get('/auth/me')
 def me(response:Response,user=Depends(require_user)):
