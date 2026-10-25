@@ -3,59 +3,95 @@ from itertools import product
 from math import prod
 from fractions import Fraction
 
-ENGINE_VERSION = '1.4.0'
+ENGINE_VERSION = '1.5.0'
 MAX_MONTHLY_MINUTES = 280 * 60
 
 
 def overtime_scenario(works, base_minutes, available_minutes, net, gap):
-    """Exact unbounded knapsack: highest net income within remaining minutes.
+    """Find minimum additional minutes to reach the gap, plus distinct mixes.
 
-    Only this hypothetical comparison relaxes positive per-work unit limits.
-    A zero max_extra still disables the activity. Complexity O(280*60*n).
+    Exact DP for the minimum-time option. Alternatives lock one slower activity
+    at one or two units, then solve the remaining target with the same DP.
+    Only hypothetical options relax positive unit limits; zero stays excluded.
     """
-    room = MAX_MONTHLY_MINUTES - base_minutes
+    room = MAX_MONTHLY_MINUTES-base_minutes
     if room <= 0 or gap <= 0:
-        return None, 'Não há espaço adicional até o teto de 280h, ou a meta já foi alcançada.'
-    enabled = [(i,w) for i,w in enumerate(works) if w['max_extra'] > 0 and w['minutes'] <= room]
+        return [], 'Não há espaço adicional até o teto de 280h, ou a meta já foi alcançada.'
+    enabled = [(i,w) for i,w in enumerate(works) if w['max_extra']>0 and w['minutes']<=room]
     if not enabled:
-        return None, 'Nenhuma atividade habilitada cabe nas horas restantes até 280h. Limite zero mantém a atividade excluída.'
-    values = [-1] * (room+1)
-    choice = [-1] * (room+1)
-    values[0] = 0
-    for minute in range(1,room+1):
-        for index,work in enabled:
-            before = minute-work['minutes']
-            if before >= 0 and values[before] >= 0:
-                income = values[before]+work['net_cents']
-                if income > values[minute]:
-                    values[minute] = income
-                    choice[minute] = index
-    used = max(range(room+1),key=lambda minute:(values[minute],-minute))
-    if used == 0:
-        return None, 'Nenhuma atividade cabe nas horas restantes até 280h.'
-    counts = [0]*len(works)
-    cursor = used
-    while cursor:
-        index = choice[cursor]
-        counts[index] += 1
-        cursor -= works[index]['minutes']
-    income = values[used]
-    total = base_minutes+used
-    exceeded = [dict(work_id=w['id'],name=w['name'],configured_max=w['max_extra'],
-                     simulated_quantity=n,excess_quantity=n-w['max_extra'])
-                for n,w in zip(counts,works) if n>w['max_extra']]
-    if total <= available_minutes and not exceeded:
-        return None, 'A maior renda possível até 280h já está dentro dos limites configurados.'
-    return dict(counts=counts,extra_cents=income,minutes=used,projected_cents=net+income,
-                total_minutes=total,label='Maior renda estimada até 280h',
-                reaches_target=income>=gap,shortfall_cents=max(0,gap-income),
-                exceeds_availability=total>available_minutes,
-                excess_minutes=max(0,total-available_minutes),hard_limit_minutes=MAX_MONTHLY_MINUTES,
-                unused_capacity_minutes=room-used,unit_limit_excess=exceeded,
-                algorithm='unbounded_knapsack_minutes_v1',objective='maximum_net_income',
-                items=[dict(work_id=w['id'],name=w['name'],quantity=n,
-                            extra_cents=n*w['net_cents'],minutes=n*w['minutes'])
-                       for n,w in zip(counts,works) if n>0]), None
+        return [], 'Nenhuma atividade habilitada cabe nas horas restantes até 280h. Limite zero mantém a atividade excluída.'
+
+    def solve(locked=None, quantity=0):
+        forced_minutes = works[locked]['minutes']*quantity if locked is not None else 0
+        forced_income = works[locked]['net_cents']*quantity if locked is not None else 0
+        capacity = room-forced_minutes
+        if capacity < 0:
+            return None
+        values, choice = [-1]*(capacity+1), [-1]*(capacity+1)
+        values[0] = forced_income
+        reached = 0 if forced_income>=gap else None
+        for minute in range(1,capacity+1):
+            if reached is not None:
+                break
+            for index,w in enabled:
+                if index==locked:
+                    continue
+                before=minute-w['minutes']
+                if before>=0 and values[before]>=0 and values[before]+w['net_cents']>values[minute]:
+                    values[minute]=values[before]+w['net_cents']
+                    choice[minute]=index
+            if values[minute]>=gap:
+                reached=minute
+        used = reached if reached is not None else max(range(capacity+1),key=lambda m:(values[m],-m))
+        if values[used]<=0 or forced_minutes+used==0:
+            return None
+        counts=[0]*len(works)
+        if locked is not None:
+            counts[locked]=quantity
+        cursor=used
+        while cursor:
+            index=choice[cursor]
+            counts[index]+=1
+            cursor-=works[index]['minutes']
+        income=values[used]
+        minutes=used+forced_minutes
+        total=base_minutes+minutes
+        exceeded=[dict(work_id=w['id'],name=w['name'],configured_max=w['max_extra'],
+                       simulated_quantity=n,excess_quantity=n-w['max_extra'])
+                  for n,w in zip(counts,works) if n>w['max_extra']]
+        if total<=available_minutes and not exceeded:
+            return None
+        return dict(counts=counts,extra_cents=income,minutes=minutes,projected_cents=net+income,
+                    total_minutes=total,reaches_target=income>=gap,shortfall_cents=max(0,gap-income),
+                    exceeds_availability=total>available_minutes,excess_minutes=max(0,total-available_minutes),
+                    hard_limit_minutes=MAX_MONTHLY_MINUTES,unused_capacity_minutes=room-minutes,
+                    unit_limit_excess=exceeded,algorithm='target_minimum_minutes_dp_v1',
+                    objective='reach_target_minimum_minutes',
+                    items=[dict(work_id=w['id'],name=w['name'],quantity=n,extra_cents=n*w['net_cents'],minutes=n*w['minutes'])
+                           for n,w in zip(counts,works) if n>0])
+
+    candidates=[]
+    primary=solve()
+    if not primary:
+        return [], 'Não há alternativa ampliada além dos limites já configurados.'
+    candidates.append(primary)
+    efficient=max(enabled,key=lambda pair:Fraction(pair[1]['net_cents'],pair[1]['minutes']))[0]
+    for index,_ in enabled:
+        if index==efficient:
+            continue
+        for quantity in (1,2):
+            row=solve(index,quantity)
+            if row and row['counts'] not in [r['counts'] for r in candidates]:
+                candidates.append(row)
+    if not candidates:
+        return [], 'Não há alternativa ampliada além dos limites já configurados.'
+    reached=[r for r in candidates if r['reaches_target']]
+    pool=reached or candidates
+    pool.sort(key=(lambda r:(r['minutes'],r['extra_cents']-gap)) if reached else (lambda r:(-r['extra_cents'],r['minutes'])))
+    selected=pool[:3]
+    for index,row in enumerate(selected):
+        row['label']=('Menor tempo para a meta' if index==0 else f'Mix alternativo {index}') if reached else ('Maior alcance até 280h' if index==0 else f'Alternativa parcial {index}')
+    return selected, None if reached else 'Mesmo ampliando as unidades, a meta não cabe em 280h. As alternativas exibidas são parciais e informam quanto ainda falta.'
 
 
 def optimize(works, expenses_cents, target_cents, available_minutes):
@@ -70,7 +106,7 @@ def optimize(works, expenses_cents, target_cents, available_minutes):
                   committed_minutes=base_minutes, remaining_minutes=remaining)
     if base_minutes > available_minutes:
         warning, note = overtime_scenario(works,base_minutes,available_minutes,net,gap)
-        return dict(**common, status='over_capacity', scenarios=[], maximum_extra_cents=0, overtime_scenario=warning, overtime_note=note)
+        return dict(**common, status='over_capacity', scenarios=[], maximum_extra_cents=0, overtime_scenarios=warning, overtime_scenario=warning[0] if warning else None, overtime_note=note)
     if gap == 0:
         return dict(**common, status='achieved', scenarios=[], maximum_extra_cents=0)
     bounds = [min(w['max_extra'], remaining // w['minutes']) for w in works]
@@ -126,7 +162,7 @@ def optimize(works, expenses_cents, target_cents, available_minutes):
                              reaches_target=row['extra_cents'] >= gap,
                              shortfall_cents=max(0, gap-row['extra_cents']),
                              total_minutes=base_minutes+row['minutes']))
-    warning, note = overtime_scenario(works,base_minutes,available_minutes,net,gap) if not feasible else (None,None)
-    return dict(**common, status='feasible' if feasible else 'infeasible', scenarios=selected, overtime_scenario=warning, overtime_note=note,
+    warning, note = overtime_scenario(works,base_minutes,available_minutes,net,gap) if not feasible else ([],None)
+    return dict(**common, status='feasible' if feasible else 'infeasible', scenarios=selected, overtime_scenarios=warning, overtime_scenario=warning[0] if warning else None, overtime_note=note,
                 maximum_extra_cents=best_partial['extra_cents'] if best_partial else 0,
                 best_partial=best_partial if not feasible else None)

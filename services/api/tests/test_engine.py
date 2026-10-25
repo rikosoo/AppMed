@@ -138,24 +138,24 @@ def test_overtime_simulation_reaches_target_without_mixing_regular_options():
     assert all(s['total_minutes'] <= 110*60 for s in result['scenarios'])
     warning = result['overtime_scenario']
     assert warning['reaches_target']
-    assert warning['counts'] == [180,0]
-    assert warning['total_minutes'] == 280*60
-    assert warning['excess_minutes'] == 170*60
+    assert warning['counts'] == [40,0]
+    assert warning['total_minutes'] == 140*60
+    assert warning['excess_minutes'] == 30*60
     assert warning['exceeds_availability']
-    assert warning['projected_cents'] == 14000000
+    assert warning['projected_cents'] == 7000000
 
 
 def test_screenshot_overtime_explores_capacity_beyond_unit_limits():
     result = optimize([work('c',50000,60,112,9),work('p',120000,720,2,2)],0,8500000,160*60)
     assert result['maximum_extra_cents'] == 570000
     warning = result['overtime_scenario']
-    assert warning['counts'] == [144,0]
-    assert warning['total_minutes'] == 280*60
-    assert warning['excess_minutes'] == 120*60
-    assert warning['extra_cents'] == 7200000
+    assert warning['counts'] == [54,0]
+    assert warning['total_minutes'] == 190*60
+    assert warning['excess_minutes'] == 30*60
+    assert warning['extra_cents'] == 2700000
     assert warning['reaches_target']
     assert warning['shortfall_cents'] == 0
-    assert warning['unit_limit_excess'][0]['simulated_quantity'] == 144
+    assert warning['unit_limit_excess'][0]['simulated_quantity'] == 54
     assert warning['unit_limit_excess'][0]['configured_max'] == 9
 
 
@@ -188,8 +188,8 @@ def test_api_and_engine_reject_more_than_280_available_hours():
 def test_large_optional_search_does_not_block_regular_results():
     result = optimize([work(str(i),minutes=1,extra=100) for i in range(6)],0,1000000,0)
     assert result['status'] == 'infeasible'
-    assert result['overtime_scenario']['total_minutes'] == 280*60
-    assert result['overtime_scenario']['algorithm'] == 'unbounded_knapsack_minutes_v1'
+    assert result['overtime_scenario']['total_minutes'] == 36
+    assert result['overtime_scenario']['algorithm'] == 'target_minimum_minutes_dp_v1'
 
 
 def test_dynamic_programming_beats_greedy_income_per_minute():
@@ -242,3 +242,49 @@ def test_cap_projection_can_relax_units_without_exceeding_hours():
     assert warning['excess_minutes'] == 0
     assert warning['unit_limit_excess'][0]['simulated_quantity'] == 280
     assert warning['counts'] == [280]
+
+
+def test_target_solutions_stop_when_reaching_gap_and_offer_three_mixes():
+    result=optimize([work('c',50000,60,10,9),work('p',120000,720,1,2)],0,5000000,138*60)
+    rows=result['overtime_scenarios']
+    assert [r['counts'] for r in rows] == [[88,0],[86,1],[83,2]]
+    assert [r['minutes'] for r in rows] == [88*60,98*60,107*60]
+    assert [r['extra_cents'] for r in rows] == [4400000,4420000,4390000]
+    for row in rows:
+        assert row['reaches_target']
+        assert row['excess_minutes'] == 0
+        assert row['total_minutes'] < 280*60
+        assert row['unit_limit_excess']
+    assert result['overtime_scenario']==rows[0]
+
+
+def test_minimum_time_solution_matches_exhaustive_oracle_for_reachable_targets():
+    from itertools import product
+    from random import Random
+    rng=Random(7)
+    for _ in range(40):
+        capacity=rng.randint(4,24)
+        durations=[rng.randint(1,7),rng.randint(1,7)]
+        incomes=[rng.randint(1,25),rng.randint(1,25)]
+        gap=rng.randint(1,100)
+        combinations=[(a*durations[0]+b*durations[1],a*incomes[0]+b*incomes[1])
+                      for a,b in product(range(capacity+1),repeat=2)
+                      if a*durations[0]+b*durations[1]<=capacity]
+        reachable=[t for t,money in combinations if money>=gap]
+        if not reachable:
+            continue
+        works=[work('base',1,16800-capacity,1,0),work('a',incomes[0],durations[0],0,1),work('b',incomes[1],durations[1],0,1)]
+        result=optimize(works,0,gap+1,16800-capacity)
+        first=result['overtime_scenarios'][0]
+        assert first['reaches_target']
+        assert first['minutes']==min(reachable)
+        assert all(r['reaches_target'] for r in result['overtime_scenarios'])
+        assert len({tuple(r['counts']) for r in result['overtime_scenarios']})==len(result['overtime_scenarios'])
+
+
+def test_single_activity_returns_one_goal_option_without_filling_the_month():
+    result=optimize([work('c',50000,60,0,1)],0,150000,60)
+    assert len(result['overtime_scenarios'])==1
+    assert result['overtime_scenario']['counts']==[3]
+    assert result['overtime_scenario']['minutes']==180
+    assert result['overtime_scenario']['excess_minutes']==120
