@@ -57,3 +57,54 @@ def test_complexity_limit_has_actionable_error():
     response = client.post('/api/optimizer',json=payload)
     assert response.status_code == 422
     assert 'limites' in response.json()['detail']
+
+
+def test_screenshot_limits_return_three_honest_partial_mixes():
+    works = [work('consultorio',50000,60,10,9), work('plantao',120000,720,1,2)]
+    works[0]['name'] = 'Meu consultório particular'
+    works[1]['name'] = 'Plantão no hospital'
+    result = optimize(works,0,5000000,138*60)
+    assert result['gap_cents'] == 4380000
+    assert result['remaining_minutes'] == 116*60
+    assert result['status'] == 'infeasible'
+    assert result['maximum_extra_cents'] == 690000
+    assert [s['counts'] for s in result['scenarios']] == [[9,2],[9,1],[9,0]]
+    for s in result['scenarios']:
+        assert not s['reaches_target']
+        assert s['shortfall_cents'] == 5000000-s['projected_cents']
+        assert s['total_minutes'] <= 138*60
+        assert sum(i['minutes'] for i in s['items']) == s['minutes']
+        assert sum(i['extra_cents'] for i in s['items']) == s['extra_cents']
+        assert s['items'][0]['name'] == 'Meu consultório particular'
+
+
+def test_expanded_consultation_limit_finds_three_distinct_allocations():
+    works = [work('consultorio',50000,60,10,100), work('plantao',120000,720,1,2)]
+    result = optimize(works,0,5000000,138*60)
+    assert result['status'] == 'feasible'
+    assert {tuple(s['counts']) for s in result['scenarios']} == {(88,0),(86,1),(83,2)}
+    assert result['scenarios'][0]['counts'] == [88,0]
+    for s in result['scenarios']:
+        assert s['reaches_target']
+        assert s['shortfall_cents'] == 0
+        assert s['minutes'] <= 116*60
+        assert s['total_minutes'] <= 138*60
+
+
+def test_time_limit_caps_partial_suggestions_even_with_high_work_limits():
+    result = optimize([work('consultorio',50000,60,0,100),work('plantao',120000,720,0,20)],0,4380000,10*60)
+    assert result['status'] == 'infeasible'
+    assert result['maximum_extra_cents'] == 500000
+    assert len(result['scenarios']) == 3
+    for s in result['scenarios']:
+        assert s['minutes'] <= 600
+        assert s['counts'][1] == 0
+        assert s['counts'][0] <= 10
+    assert len({tuple(s['counts']) for s in result['scenarios']}) == 3
+
+
+def test_only_existing_legal_nonzero_combinations_are_returned():
+    result = optimize([work(extra=1)],0,999999,60)
+    assert len(result['scenarios']) == 1
+    assert result['scenarios'][0]['counts'] == [1]
+    assert optimize([work(extra=0)],0,999999,60)['scenarios'] == []

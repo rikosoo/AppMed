@@ -101,3 +101,34 @@ test('invalid saved data is preserved',async({page})=>{
  await expect(page.locator('.alert.error')).toContainText('Não foi possível ler seus dados locais');
  expect(await page.evaluate(()=>localStorage.getItem('financemed.v1'))).toBe('broken');
 });
+
+test('screenshot: partial mixes, expanded limits and readable server failures',async({page})=>{
+ const data={version:1,months:{[month()]:{target:5000000,available:138*60,demo:false,onboardingComplete:true,saved:[],expenses:[],works:[
+  {id:'consultorio',name:'Consultório particular',type:'Consulta',net_cents:50000,minutes:60,quantity:10,max_extra:9},
+  {id:'plantao',name:'Plantão no hospital',type:'Plantão',net_cents:120000,minutes:720,quantity:1,max_extra:2}
+ ]}}};
+ await page.addInitScript(data=>localStorage.setItem('financemed.v1',JSON.stringify(data)),data);
+ await page.goto('/');await login(page);await nav(page,'Otimizar').click();
+ await expect(page.getByText('R$ 43.800,00',{exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Encontrar combinações'}).click();
+ await expect(page.getByRole('heading',{name:'A meta precisa de um ajuste'})).toBeVisible();
+ await expect(page.locator('.scenario')).toHaveCount(3);
+ await expect(page.locator('.scenario').first()).toContainText('9 × Consultório particular');
+ await expect(page.locator('.scenario').first()).toContainText('2 × Plantão no hospital');
+ await expect(page.locator('.scenario').first()).toContainText('33h');
+ await expect(page.locator('.scenario-status.partial')).toHaveCount(3);
+ await expect(page.locator('.scenario').first()).toContainText('36.900,00');
+ await page.getByLabel('Limite adicional Consultório particular').fill('100');
+ await page.getByRole('button',{name:'Encontrar combinações'}).click();
+ await expect(page.getByRole('heading',{name:'Caminhos para a sua meta'})).toBeVisible();
+ await expect(page.locator('.scenario-status.met')).toHaveCount(3);
+ await expect(page.getByText('88 × Consultório particular',{exact:true})).toBeVisible();
+ await expect(page.getByText('83 × Consultório particular',{exact:true})).toBeVisible();
+ await expect(page.getByText('86 × Consultório particular',{exact:true})).toBeVisible();
+ await page.screenshot({path:`/tmp/financemed-mixes-${test.info().project.name}.png`,fullPage:true});
+ await page.route('**/api/optimizer',route=>route.fulfill({status:500,contentType:'text/plain',body:'Internal Server Error'}));
+ await page.getByRole('button',{name:'Encontrar combinações'}).click();
+ await expect(page.locator('.alert.error')).toContainText('Execute npm run dev');
+ await expect(page.locator('.alert.error')).not.toContainText('Unexpected token');
+ await expect(page.locator('.scenario')).toHaveCount(0);
+});

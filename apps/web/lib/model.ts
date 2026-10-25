@@ -1,6 +1,7 @@
 export type Work = { id: string; name: string; type: string; net_cents: number; minutes: number; quantity: number; max_extra: number };
 export type Expense = { id: string; name: string; category: string; cents: number };
-export type Scenario = { counts: number[]; extra_cents: number; minutes: number; projected_cents: number; label: string };
+export type ScenarioItem = { work_id: string; name: string; quantity: number; extra_cents: number; minutes: number };
+export type Scenario = { items?: ScenarioItem[]; reaches_target?: boolean; shortfall_cents?: number; total_minutes?: number; counts: number[]; extra_cents: number; minutes: number; projected_cents: number; label: string };
 export type Result = { engine_version: string; status: string; scenarios: Scenario[]; maximum_extra_cents: number; remaining_minutes: number; gap_cents: number; best_partial?: Scenario };
 export type Saved = { id: string; date: string; scenario: Scenario; works: Work[]; target: number; expenses: number; available: number; engine: string };
 export type Plan = { works: Work[]; expenses: Expense[]; target: number; available: number; saved: Saved[]; demo: boolean; onboardingComplete?: boolean };

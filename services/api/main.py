@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field, ConfigDict
-from engine import optimize
+from engine import ENGINE_VERSION, optimize
 
 app = FastAPI(title='FinanceMed AI', version='0.1.0')
 
@@ -23,7 +23,7 @@ class OptimizationRequest(BaseModel):
 
 @app.get('/api/health')
 def health():
-    return {'status': 'ok', 'engine': '1.0.0'}
+    return {'status': 'ok', 'engine': ENGINE_VERSION}
 
 @app.post('/api/optimizer')
 def optimizer(data: OptimizationRequest):

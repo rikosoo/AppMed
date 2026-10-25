@@ -40,7 +40,7 @@ No primeiro acesso a cada mês, o assistente pede trabalhos, despesas (ou a esco
 - Trabalhos: criar, editar e excluir até seis fontes de renda; ganho líquido por unidade, minutos comprometidos, quantidade prevista e limite adicional.
 - Despesas: criar, editar e excluir custos de cada mês, sem dupla contagem de custos por unidade.
 - Meta: renda líquida desejada e horas totais disponíveis, incluindo atividades previstas.
-- Otimizar: até três combinações distintas, classificadas por tempo, proximidade da meta e alternativa mista; resultados podem ser menos de três quando não existirem combinações distintas.
+- Otimizar: até três combinações distintas, classificadas por tempo, proximidade da meta e alternativa mista; resultados podem ser menos de três quando não existirem combinações distintas. Cada opção detalha quantidades e nomes dos trabalhos, ganho incremental e horas adicionais/totais. Quando a meta é impossível, mostra até três alternativas parciais, com o valor que ainda falta; não as apresenta como metas alcançadas.
 - Cenários salvos preservam entradas, resultado e versão do motor. Salvar não altera previsão nem registra recebimentos.
 - Planejamentos independentes por mês, persistência em `localStorage` e exportação JSON de todos os meses.
 - Entrada local, saída de sessão e preenchimento inicial guiado em três etapas, sem dados fictícios.
@@ -59,6 +59,7 @@ Dados são guardados apenas neste navegador, sem sincronização entre dispositi
 
 ```bash
 npm run test:api
+npm run test:proxy
 npm run typecheck
 npm run build
 # Com os dois servidores ativos e Chromium instalado:
@@ -70,3 +71,9 @@ Os testes Playwright usam `/usr/bin/chromium`; é possível substituir via `CHRO
 ## Próxima etapa
 
 Após validar a experiência: autenticação gerenciada, PostgreSQL com isolamento por usuário, sincronização e recuperação de dados. Manifesto web e ícone estão incluídos; cache offline e aplicativo nativo ainda não foram implementados. O PRD completo em `docs/PRD.md` é referência para fases futuras, não uma declaração de funcionalidades entregues.
+
+## Exemplo de combinação e diagnóstico da API
+
+Faltando R$ 43.800, com consultas líquidas de R$ 500/1h e plantões líquidos de R$ 1.200/12h, há três opções dentro de 116h adicionais se os limites permitirem: 88 consultas (R$ 44.000, 88h); 86 consultas + 1 plantão (R$ 44.200, 98h); 83 consultas + 2 plantões (R$ 43.900, 107h). Se o limite for 9 consultas e 2 plantões, o máximo é R$ 6.900 em 33h; os cartões são marcados como parciais. O sistema nunca aumenta os limites automaticamente nem preenche dados financeiros com esses exemplos.
+
+A rota Next.js `/api/optimizer` faz a ponte com a API. Falha de conexão ou resposta de erro em texto retorna uma mensagem em português; não tenta exibir `Internal Server Error` como JSON. Execute `npm run dev` para iniciar os dois serviços, ou confira o terminal FastAPI na porta 8000. Alterações no motor Python exigem reiniciar a API.
