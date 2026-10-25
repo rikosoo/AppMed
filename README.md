@@ -109,3 +109,7 @@ O critério principal é atingir a meta com menos horas. Unidades são inteiras,
 Somente nas alternativas ampliadas, limites positivos de unidades podem ser ultrapassados; limite zero continua excluindo a atividade. Os detalhes de limites ficam recolhidos em cada cartão para priorizar a combinação e o tempo necessário. Nada é aplicado ou salvo automaticamente, e os cadastros permanecem inalterados. Confirme demanda e viabilidade da rotina antes de assumir novas atividades.
 
 O motor usa centavos e minutos inteiros. Testes verificam o menor tempo contra busca exaustiva independente, metas inviáveis, exclusões, histórico e layouts de 320 a 1440px. Cadastros históricos acima de 280h não são apagados: a disponibilidade precisa ser corrigida antes de otimizar ou reutilizar o mês.
+
+## Publicar na AWS
+
+Veja o passo a passo em [docs/AWS.md](docs/AWS.md). Os arquivos em `deploy/` iniciam Next.js, FastAPI e Caddy com HTTPS e acesso restrito. O servidor publicado usa Docker Compose em modo de produção, não `npm run dev`. Para atualizar uma instalação já configurada: `bash scripts/update-server.sh`, executado no SSH do servidor.
