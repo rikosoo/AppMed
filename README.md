@@ -6,7 +6,18 @@ MVP web responsivo para planejamento financeiro de médicos. Interface em portug
 
 Requisitos: Node.js 22+ e Python 3.12+. Na raiz do repositório:
 
-### Windows (PowerShell)
+### Início rápido (Windows, macOS e Linux)
+
+Com Node.js e Python instalados, execute na pasta principal (a que contém `package.json`):
+
+```powershell
+npm ci
+npm run dev
+```
+
+O iniciador procura o Python (incluindo `py -3` no Windows), cria `.venv` se ela não existir e instala as dependências da API quando faltarem. Essa primeira preparação precisa de conexão de rede. O erro `No module named uvicorn` é tratado por essa verificação.
+
+### Preparação manual no Windows (PowerShell)
 
 ```powershell
 npm ci
@@ -15,7 +26,7 @@ python -m venv .venv
 npm run dev
 ```
 
-### macOS / Linux
+### Preparação manual no macOS / Linux
 
 ```bash
 npm ci
@@ -24,7 +35,11 @@ python -m venv .venv
 npm run dev
 ```
 
-O iniciador é compatível com Windows, macOS e Linux; não exige Bash ou WSL. O comando inicia Next.js na porta 3000 e FastAPI na porta 8000. A interface encaminha `/api/*` para a API. Para hospedagem separada, configure `API_URL` no ambiente do Next.js antes de compilar. A API escuta somente em loopback por padrão; não tem autenticação e não deve ser exposta diretamente à internet.
+O iniciador foi escrito para Windows, macOS e Linux; não exige Bash ou WSL. A execução real e a recuperação de dependências foram validadas no cloud Linux; o caminho e a seleção do Python no Windows têm testes automatizados, sem uma máquina Windows neste ambiente. O comando inicia Next.js na porta 3000 e FastAPI na porta 8000. A interface encaminha `/api/*` para a API. Para hospedagem separada, configure `API_URL` no ambiente do Next.js antes de compilar. A API escuta somente em loopback por padrão; não tem autenticação e não deve ser exposta diretamente à internet.
+
+Se a porta 3000 estiver ocupada, encerre a interface antiga com Ctrl+C antes de iniciar. Uma API já ativa na porta 8000 só é reutilizada se responder como FinanceMed com a versão esperada; outros serviços ou versões antigas geram orientação para parar o servidor. O iniciador encerra apenas os processos que ele criou.
+
+Para executar separadamente em dois terminais: `npm run dev:api` e `npm run dev:web`. O comando `npm run dev --workspace=apps/web` também inicia somente a interface; o cálculo depende da API estar ativa.
 
 Para produção local, execute `npm run build`, inicie `.venv/bin/uvicorn main:app --app-dir services/api --host 127.0.0.1 --port 8000` e, em outro terminal, `npm start`.
 
@@ -60,6 +75,7 @@ Dados são guardados apenas neste navegador, sem sincronização entre dispositi
 ```bash
 npm run test:api
 npm run test:proxy
+npm run test:launcher
 npm run typecheck
 npm run build
 # Com os dois servidores ativos e Chromium instalado:
@@ -77,3 +93,7 @@ Após validar a experiência: autenticação gerenciada, PostgreSQL com isolamen
 Faltando R$ 43.800, com consultas líquidas de R$ 500/1h e plantões líquidos de R$ 1.200/12h, há três opções dentro de 116h adicionais se os limites permitirem: 88 consultas (R$ 44.000, 88h); 86 consultas + 1 plantão (R$ 44.200, 98h); 83 consultas + 2 plantões (R$ 43.900, 107h). Se o limite for 9 consultas e 2 plantões, o máximo é R$ 6.900 em 33h; os cartões são marcados como parciais. O sistema nunca aumenta os limites automaticamente nem preenche dados financeiros com esses exemplos.
 
 A rota Next.js `/api/optimizer` faz a ponte com a API. Falha de conexão ou resposta de erro em texto retorna uma mensagem em português; não tenta exibir `Internal Server Error` como JSON. Execute `npm run dev` para iniciar os dois serviços, ou confira o terminal FastAPI na porta 8000. Alterações no motor Python exigem reiniciar a API.
+
+## Layout mobile first
+
+Os estilos responsivos em `apps/web/app/responsive.css` partem de uma coluna e navegação inferior. Campos usam fonte de 16px para evitar zoom automático no iPhone, botões têm área de toque de pelo menos 44px e formulários abrem como painel inferior em telas pequenas, com rolagem do fundo bloqueada. A partir de 640px entram colunas adicionais; a partir de 1024px, navegação lateral. Testes verificam as cinco telas, login, cadastro inicial e diálogos nas larguras de 320, 390, 768, 1024 e 1440px.
