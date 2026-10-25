@@ -5,3 +5,7 @@
     encode zstd gzip
     reverse_proxy web:3000
 }
+
+http:// {
+    redir https://{$APP_DOMAIN}{uri} 308
+}

@@ -13,6 +13,26 @@ if [[ "$(git symbolic-ref --short -q HEAD || true)" != "main" ]]; then
   echo "A atualização espera a branch main. Após um rollback, execute git switch main primeiro."
   exit 1
 fi
+# Copy the live SQLite database consistently before replacing the API image.
+# The first upgrade from the demo version has no database yet.
+api_container="$(sudo docker compose --env-file deploy/.env -f deploy/compose.prod.yml ps --status running -q api)"
+if [[ -n "$api_container" ]]; then
+  sudo docker compose --env-file deploy/.env -f deploy/compose.prod.yml exec -T api python - <<'PYBACKUP'
+import os,sqlite3
+from pathlib import Path
+from datetime import datetime,timezone
+path=Path(os.environ.get('DATABASE_PATH','/data/financemed.sqlite3'))
+if path.exists():
+    folder=path.parent/'backups';folder.mkdir(exist_ok=True,mode=0o700)
+    target=folder/('before-update-'+datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')+'.sqlite3')
+    os.close(os.open(target,os.O_CREAT|os.O_EXCL|os.O_WRONLY,0o600))
+    with sqlite3.connect(path) as source,sqlite3.connect(target) as destination:
+        source.backup(destination)
+    print('Backup consistente do banco criado:',target)
+else:
+    print('Sem banco anterior nesta versão; primeira atualização para contas persistentes.')
+PYBACKUP
+fi
 previous_commit="$(git rev-parse HEAD)"
 echo "Versão anterior (guarde para rollback): $previous_commit"
 git pull --ff-only origin main

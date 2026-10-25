@@ -1,6 +1,12 @@
 name: financemed
 services:
   api:
+    environment:
+      DATABASE_PATH: /data/financemed.sqlite3
+      SESSION_COOKIE_SECURE: "true"
+      APP_ALLOWED_ORIGINS: ${APP_ORIGIN:?Defina APP_ORIGIN com https em deploy/.env}
+    volumes:
+      - api_data:/data
     build:
       context: ..
       dockerfile: deploy/Dockerfile.api
@@ -67,5 +73,6 @@ services:
         max-size: "10m"
         max-file: "3"
 volumes:
+  api_data:
   caddy_data:
   caddy_config:

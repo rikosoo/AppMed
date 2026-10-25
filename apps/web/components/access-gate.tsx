@@ -1,49 +1,24 @@
 'use client';
-import { useEffect, useState, type ReactNode, type FormEvent } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode, type FormEvent } from 'react';
 import { Activity, ArrowRight, Eye, EyeOff, Leaf, LockKeyhole, LogOut } from 'lucide-react';
-
-const sessionKey = 'financemed.demo-session';
-export default function AccessGate({ children }: { children: ReactNode }) {
-  const [ready, setReady] = useState(false);
-  const [signedIn, setSignedIn] = useState(false);
-  const [error, setError] = useState('');
-  const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    try { setSignedIn(sessionStorage.getItem(sessionKey) === 'active'); } catch { /* Memory-only login still works. */ }
-    setReady(true);
-  }, []);
-  function login(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    if (data.get('username') !== '123456' || data.get('password') !== '123456') {
-      setError('Usuário ou senha incorretos. Confira e tente novamente.');
-      return;
-    }
-    try { sessionStorage.setItem(sessionKey, 'active'); } catch { /* No persistent session in restricted browsers. */ }
-    setError('');
-    setSignedIn(true);
-  }
-  function logout() {
-    try { sessionStorage.removeItem(sessionKey); } catch { /* In-memory state is cleared below. */ }
-    setSignedIn(false);
-    setVisible(false);
-  }
-  if (!ready) return <div className="loading"><Activity size={34}/><p>Preparando seu espaço…</p></div>;
-  if (signedIn) return <><div className="session-controls"><button onClick={logout}><LogOut size={15}/> Sair</button></div>{children}</>;
-  return <main className="welcome-shell">
-    <section className="welcome-story" aria-label="FinanceMed AI">
-      <a className="brand" href="/"><span className="brand-icon"><Activity size={25}/></span><span>FinanceMed<span className="ai">AI</span></span></a>
-      <div className="welcome-copy"><span className="section-kicker"><Leaf size={17}/> MAIS EQUILÍBRIO PARA SUA ROTINA</span><h1>Você cuida de vidas.<br/>Seu futuro também<br/>merece cuidado.</h1><p>Organize seus trabalhos, conheça sua renda e encontre um caminho para os seus objetivos.</p></div>
-      <span className="welcome-caption">Seu dinheiro, com propósito.</span>
-    </section>
-    <section className="welcome-form"><div className="login-mark"><LockKeyhole size={25}/></div><div className="eyebrow">BEM-VINDO AO FINANCEMED</div><h2>Entre no seu espaço.</h2><p>Seu planejamento começa com você.</p>
-      <form onSubmit={login}>
-        <label>Usuário<input name="username" autoComplete="username" required autoFocus placeholder="Digite seu usuário" onChange={()=>setError('')}/></label>
-        <label>Senha<div className="password-field"><input name="password" type={visible?'text':'password'} autoComplete="current-password" required placeholder="Digite sua senha" onChange={()=>setError('')}/><button type="button" onClick={()=>setVisible(!visible)} aria-label={visible?'Ocultar senha':'Mostrar senha'}>{visible?<EyeOff size={18}/>:<Eye size={18}/>}</button></div></label>
-        {error && <div className="alert error" role="alert">{error}</div>}
-        <button className="primary-button full" type="submit">Entrar <ArrowRight size={17}/></button>
-      </form>
-      <div className="login-disclaimer"><LockKeyhole size={15}/><span>Acesso de demonstração local. Não substitui uma conta segura para uso online.</span></div>
-    </section>
-  </main>;
+type User={id:string;username:string};
+const AccountContext=createContext<User|null>(null);
+export const useAccount=()=>useContext(AccountContext)!;
+export default function AccessGate({children}:{children:ReactNode}){
+ const [ready,setReady]=useState(false),[user,setUser]=useState<User|null>(null),[error,setError]=useState(''),[visible,setVisible]=useState(false),[register,setRegister]=useState(false),[busy,setBusy]=useState(false),[blocked,setBlocked]=useState(false);
+ useEffect(()=>{let active=true;setBlocked(location.protocol!=='https:'&&!['localhost','127.0.0.1','[::1]'].includes(location.hostname));fetch('/api/auth/me',{cache:'no-store'}).then(async response=>{if(response.ok){const data=await response.json();if(active)setUser(data.user);}else if(response.status!==401)throw Error('Não foi possível consultar sua sessão. Confira se a API está em execução.');}).catch(e=>{if(active)setError(e instanceof Error?e.message:'Falha ao conectar ao servidor.');}).finally(()=>{if(active)setReady(true);});return()=>{active=false;};},[]);
+ async function submit(event:FormEvent<HTMLFormElement>){
+  event.preventDefault();setError('');if(blocked){setError('Use o endereço HTTPS do site para criar uma conta ou entrar.');return;}
+  const form=new FormData(event.currentTarget);
+  if(register&&form.get('password')!==form.get('confirm')){setError('As senhas não coincidem.');return;}
+  setBusy(true);
+  try{const response=await fetch(`/api/auth/${register?'register':'login'}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:form.get('username'),password:form.get('password')})});const data=await response.json();if(!response.ok)throw Error(typeof data.detail==='string'?data.detail:'Revise os campos e tente novamente.');setUser(data.user);setVisible(false);}catch(e){setError(e instanceof Error&&e.name!=='TypeError'?e.message:'Não foi possível conectar ao servidor. Tente novamente.');}finally{setBusy(false);}
+ }
+ async function logout(){setBusy(true);setError('');try{const response=await fetch('/api/auth/logout',{method:'POST',headers:{'X-FinanceMed-Account':user?.id||''}});if(!response.ok)throw Error();setUser(null);setRegister(false);setVisible(false);}catch{setError('Não foi possível encerrar sua sessão no servidor. Tente novamente.');}finally{setBusy(false);}}
+ if(!ready)return <div className="loading"><Activity size={34}/><p>Preparando seu espaço…</p></div>;
+ if(user)return <AccountContext.Provider value={user}><div className="session-controls"><button onClick={logout} disabled={busy}><LogOut size={15}/> Sair</button></div>{error&&<div className="account-error alert error" role="alert">{error}</div>}<div key={user.id}>{children}</div></AccountContext.Provider>;
+ return <main className="welcome-shell"><section className="welcome-story" aria-label="FinanceMed AI"><a className="brand" href="/"><span className="brand-icon"><Activity size={25}/></span><span>FinanceMed<span className="ai">AI</span></span></a><div className="welcome-copy"><span className="section-kicker"><Leaf size={17}/> MAIS EQUILÍBRIO PARA SUA ROTINA</span><h1>Você cuida de vidas.<br/>Seu futuro também<br/>merece cuidado.</h1><p>Organize seus trabalhos, conheça sua renda e encontre um caminho para os seus objetivos.</p></div><span className="welcome-caption">Seu dinheiro, com propósito.</span></section><section className="welcome-form"><div className="login-mark"><LockKeyhole size={25}/></div><div className="eyebrow">BEM-VINDO AO FINANCEMED</div><h2>{register?'Crie sua conta.':'Entre no seu espaço.'}</h2><p>{register?'Seu planejamento, salvo na sua conta.':'Acesse seus dados de qualquer dispositivo.'}</p>
+ {blocked&&<div className="alert error" role="alert">Este endereço está em HTTP. Abra o endereço HTTPS configurado no servidor para usar contas e senhas.</div>}
+ <form key={String(register)} onSubmit={submit}><label>Usuário<input name="username" autoComplete="username" required maxLength={80} minLength={register?3:1} autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder={register?'Escolha seu usuário':'Digite seu usuário'} onChange={()=>setError('')}/></label><label>Senha<div className="password-field"><input name="password" type={visible?'text':'password'} autoComplete={register?'new-password':'current-password'} required minLength={register?8:1} maxLength={128} placeholder={register?'Pelo menos 8 caracteres':'Digite sua senha'} onChange={()=>setError('')}/><button type="button" onClick={()=>setVisible(!visible)} aria-label={visible?'Ocultar senha':'Mostrar senha'}>{visible?<EyeOff size={18}/>:<Eye size={18}/>}</button></div></label>{register&&<label>Confirmar senha<input name="confirm" type="password" required minLength={8} maxLength={128} autoComplete="new-password" placeholder="Digite a senha novamente"/></label>}{error&&<div className="alert error" role="alert">{error}</div>}<button className="primary-button full" type="submit" disabled={busy||blocked}>{busy?'Aguarde…':register?'Criar minha conta':'Entrar'}<ArrowRight size={17}/></button></form>
+ <button className="outline-button full auth-switch" disabled={busy} onClick={()=>{setRegister(!register);setError('');setVisible(false);}}>{register?'Já tenho conta · Entrar':'Criar conta'}</button><div className="login-disclaimer"><LockKeyhole size={15}/><span>Sessão protegida. Seus planejamentos são salvos no servidor e ficam separados por conta.</span></div></section></main>;
 }

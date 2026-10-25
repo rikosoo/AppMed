@@ -1,3 +1,4 @@
+import { accountLogin } from './helpers/auth';
 import { test, expect } from '@playwright/test';
 import { examplePlan } from '../apps/web/lib/model';
 const widths=[320,390,768,1024,1440];
@@ -5,9 +6,7 @@ async function noOverflow(page:import('@playwright/test').Page){
  const dimensions=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,visible:innerWidth}));
  expect(dimensions.scroll,`horizontal overflow at ${dimensions.visible}px`).toBeLessThanOrEqual(dimensions.visible);
 }
-async function login(page:import('@playwright/test').Page){
- await page.getByLabel('Usuário',{exact:true}).fill('123456');await page.getByLabel('Senha',{exact:true}).fill('123456');await page.getByRole('button',{name:'Entrar',exact:true}).click();
-}
+const login = accountLogin;
 test('login and initial setup fit small phones, tablets and desktop',async({page})=>{
  await page.goto('/');
  for(const width of widths){

@@ -1,10 +1,11 @@
+import { accountLogin } from './helpers/auth';
 import { test, expect, type Page } from '@playwright/test';
 const nav=(page:Page,name:string)=>page.getByRole('navigation',{name:test.info().project.name==='mobile'?'Navegação móvel':'Menu principal'}).getByRole('button',{name,exact:true});
 async function seed(page:Page,available=110*60){
  const month=new Intl.DateTimeFormat('sv-SE',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit'}).format(new Date()).slice(0,7);
  const data={version:1,months:{[month]:{target:7000000,available,demo:false,onboardingComplete:true,saved:[],expenses:[],works:[{id:'c',name:'Consultório particular',type:'Consulta',net_cents:50000,minutes:60,quantity:100,max_extra:100},{id:'p',name:'Plantão',type:'Plantão',net_cents:120000,minutes:720,quantity:0,max_extra:4}]}}};
  await page.addInitScript(data=>localStorage.setItem('financemed.v1',JSON.stringify(data)),data);
- await page.goto('/');await page.getByLabel('Usuário',{exact:true}).fill('123456');await page.getByLabel('Senha',{exact:true}).fill('123456');await page.getByRole('button',{name:'Entrar',exact:true}).click();
+ await page.goto('/');await accountLogin(page);
 }
 test('overtime is a separate red alert with explicit excess and total hours',async({page})=>{
  await seed(page);await nav(page,'Otimizar').click();await page.getByRole('button',{name:'Encontrar combinações'}).click();

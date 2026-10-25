@@ -8,3 +8,9 @@ __pycache__/
 *.tsbuildinfo
 playwright-report/
 test-results/
+
+services/api/data/
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+backups/

@@ -1,8 +1,9 @@
+import { accountLogin } from './helpers/auth';
 import { test, expect, type Page } from '@playwright/test';
 import { examplePlan } from '../apps/web/lib/model';
 const month=()=>new Intl.DateTimeFormat('sv-SE',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit'}).format(new Date()).slice(0,7);
 const nav=(page:Page,name:string)=>page.getByRole('navigation',{name:test.info().project.name==='mobile'?'Navegação móvel':'Menu principal'}).getByRole('button',{name,exact:true});
-async function login(page:Page){await page.getByLabel('Usuário',{exact:true}).fill('123456');await page.getByLabel('Senha',{exact:true}).fill('123456');await page.getByRole('button',{name:'Entrar',exact:true}).click();}
+const login = accountLogin;
 async function seed(page:Page){const data={version:1,months:{[month()]:{...examplePlan(),demo:false,onboardingComplete:true}}};await page.addInitScript(data=>{if(!localStorage.getItem('financemed.v1'))localStorage.setItem('financemed.v1',JSON.stringify(data));},data);await page.goto('/');await login(page);}
 test('PF and PJ estimates update the projection and optimizer without taxing legacy data twice',async({page})=>{
  await seed(page);await expect(page.locator('.metric.net>strong')).toHaveText(/29\.550,00/);

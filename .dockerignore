@@ -10,3 +10,7 @@ node_modules
 **/.env*
 playwright-report
 test-results
+
+services/api/data
+**/*.sqlite3*
+backups

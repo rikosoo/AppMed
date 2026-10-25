@@ -6,8 +6,8 @@ Este guia usa **AWS Lightsail + Ubuntu 24.04 LTS + Docker Compose + Caddy**. O L
 
 - Conta AWS e um domínio ou subdomínio que você controla, por exemplo `finance.seudominio.com.br`.
 - Instância Ubuntu 24.04 LTS com **4 GB de RAM recomendados**, porque a compilação acontece na própria máquina. Confira o preço mensal na AWS antes de criar.
-- Este é um ambiente de demonstração restrito. O login interno `123456` continua sendo demonstrativo; a senha extra do Caddy protege o acesso ao site e à API, sem criar contas individuais.
-- Os dados financeiros continuam no `localStorage` do navegador. Dados do `localhost` **não aparecem automaticamente no novo domínio**, nem em outro dispositivo. Exporte uma cópia antes de mudar de endereço. A versão atual exporta JSON para consulta, mas ainda não importa/restaura esse arquivo pela interface. Não existe banco de dados de usuários neste deploy.
+- O aplicativo usa contas individuais em SQLite; a senha extra do Caddy continua protegendo externamente o acesso. Consulte [a configuração atual de domínio e banco](DOMINIO.md), inclusive `APP_ORIGIN`, antes de atualizar um deploy anterior.
+- Contas e planejamentos ficam no volume persistente `api_data`. Para trazer dados antigos de outro endereço, exporte o JSON e importe na configuração inicial da conta. Nunca use `down -v` em um ambiente com dados que deseja preservar.
 
 ## 1. Criar a máquina no Lightsail
 
@@ -94,7 +94,7 @@ sudo docker compose --env-file deploy/.env -f deploy/compose.prod.yml ps
 
 A primeira compilação pode demorar. API, interface e Caddy devem ficar `healthy`.
 
-Abra **https://finance.seudominio.com.br** no navegador. Primeiro ele pedirá o usuário `admin` e a senha forte do passo 4. Depois aparece o login de demonstração do FinanceMed (`123456` / `123456`).
+Abra **https://finance.seudominio.com.br** no navegador. Primeiro ele pedirá o usuário `admin` e a senha forte do passo 4. Depois aparece o login do FinanceMed: crie sua conta individual.
 
 Para conferir pelo SSH, substitua o domínio e digite a senha externa quando o curl pedir:
 
@@ -171,12 +171,12 @@ sudo docker compose --env-file deploy/.env -f deploy/compose.prod.yml logs --tai
 - **Não abre o domínio:** confira o registro A, IP estático e portas 80/443.
 - **Não emite certificado:** confira a propagação do DNS e os logs do Caddy. Não desative a verificação HTTPS para contornar o problema.
 - **Caddy falha ao iniciar:** confira domínio, usuário e hash no `.env`; o hash precisa manter os `$` e as aspas simples no arquivo.
-- **401:** o usuário ou a senha externa não foram enviados ou estão incorretos. Essa senha é diferente do login interno `123456`.
+- **401:** o usuário ou a senha externa não foram enviados ou estão incorretos. Essa senha é diferente da senha da conta individual.
 - **Erro no otimizador:** confira `web` e `api`; `API_URL` deve continuar `http://api:8000` dentro dos contêineres.
 - **Atualização rejeitada por alterações locais:** preserve/revise o que mudou antes de continuar. `.env` é ignorado e não exige commit.
 - **Compilação encerrada por falta de memória:** aumente a RAM da instância antes de repetir a compilação.
 
-Faça snapshots do Lightsail antes de mudanças importantes e guarde, de forma segura, a configuração do servidor. Snapshot da máquina não salva o `localStorage` que está no computador ou celular do usuário. Atualizações do Ubuntu também exigem manutenção periódica e, às vezes, reinício da máquina.
+Faça snapshots do Lightsail antes de mudanças importantes e guarde, de forma segura, a configuração do servidor. Faça também backup online do SQLite, conforme DOMINIO.md. Atualizações do Ubuntu também exigem manutenção periódica e, às vezes, reinício da máquina.
 
 ## Referências
 

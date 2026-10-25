@@ -3,7 +3,7 @@ from itertools import product
 from math import prod
 from fractions import Fraction
 
-ENGINE_VERSION = '1.5.0'
+ENGINE_VERSION = '1.6.0'
 MAX_MONTHLY_MINUTES = 280 * 60
 
 

@@ -5,7 +5,7 @@ export async function POST(request: Request) {
   catch { return Response.json({ detail: 'Não foi possível ler os dados enviados. Tente calcular novamente.' }, { status: 400 }); }
   try {
     const upstream = await fetch(`${process.env.API_URL || 'http://127.0.0.1:8000'}/api/optimizer`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'Cookie': request.headers.get('cookie')||'', 'X-FinanceMed-Account': request.headers.get('x-financemed-account')||'' },
       body: JSON.stringify(payload), signal: AbortSignal.timeout(20000), cache: 'no-store',
     });
     const raw = await upstream.text();

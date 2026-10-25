@@ -1,6 +1,6 @@
 # FinanceMed AI
 
-MVP web responsivo para planejamento financeiro de médicos. Interface em português, navegação inferior no celular e lateral no desktop. Esta entrega é a versão local de validação escolhida pelo usuário, com acesso de demonstração e sem banco de dados.
+MVP web responsivo para planejamento financeiro de médicos. Interface em português, navegação inferior no celular e lateral no desktop. Contas individuais e planejamentos persistem em SQLite no servidor. Consulte [domínio e persistência](docs/DOMINIO.md) e [base administrativa](docs/ADMIN.md).
 
 ## Executar
 
@@ -45,7 +45,7 @@ Para produção local, execute `npm run build`, inicie `.venv/bin/uvicorn main:a
 
 ## Acesso e primeiro preenchimento
 
-Usuário: `123456`. Senha: `123456`. Os campos de login começam vazios. Este acesso fixo é apenas uma barreira visual de demonstração no navegador, não autenticação segura: não protege a API nem cria usuários separados. Não publique como serviço autenticado. A sessão fica no `sessionStorage`; Sair encerra o acesso e mantém os dados financeiros no navegador.
+Use **Criar conta** para cadastrar usuário e senha (mínimo 8 caracteres). A sessão usa cookie HttpOnly; senhas são armazenadas com hash scrypt. Não existe mais login fixo. Em produção, use HTTPS. Ainda não há recuperação de senha por e-mail.
 
 No primeiro acesso sem histórico, o assistente pede trabalhos, despesas (ou a escolha explícita de continuar sem despesas), meta líquida e disponibilidade, sem valores financeiros preenchidos. Ao abrir um mês novo com histórico anterior, o aplicativo pergunta se você quer revisar e atualizar, manter os mesmos dados ou começar do zero. A cópia só acontece após a escolha; cenários salvos não são copiados e o mês de origem não é alterado. A virada de mês também é detectada quando o aplicativo está aberto ou volta a ficar visível. Depois de concluir, os próximos acessos recuperam os dados daquele mês. Os dados de exemplo de versões anteriores são retirados da tela e preservados em `localStorage["financemed.legacy-demo.v1"]`; planejamentos sem a marca de demonstração são mantidos.
 
@@ -57,7 +57,7 @@ No primeiro acesso sem histórico, o assistente pede trabalhos, despesas (ou a e
 - Meta: renda líquida desejada e horas totais disponíveis, incluindo atividades previstas.
 - Otimizar: até três combinações distintas, classificadas por tempo, proximidade da meta e alternativa mista; resultados podem ser menos de três quando não existirem combinações distintas. Cada opção detalha quantidades e nomes dos trabalhos, ganho incremental e horas adicionais/totais. Quando a meta é impossível, mostra até três alternativas parciais, com o valor que ainda falta; não as apresenta como metas alcançadas.
 - Cenários salvos preservam entradas, resultado e versão do motor. Salvar não altera previsão nem registra recebimentos.
-- Planejamentos independentes por mês, persistência em `localStorage` e exportação JSON de todos os meses.
+- Planejamentos independentes por mês, persistência por conta no servidor, exportação JSON e importação confirmada na configuração inicial.
 - Entrada local, saída de sessão e preenchimento inicial guiado em três etapas, sem dados fictícios.
 
 ## Cálculos e limites
@@ -68,7 +68,7 @@ A meta impossível informa a receita incremental máxima dentro dos limites. A p
 
 ## Persistência e privacidade
 
-Dados são guardados apenas neste navegador, sem sincronização entre dispositivos. O cálculo envia entradas à API FastAPI, que não grava em banco e não registra corpos das requisições. Não cadastrar dados de pacientes. Limpar o armazenamento do navegador apaga os dados; exporte cópias. A exportação JSON é uma cópia para consulta: importação/restauração pela interface ainda não foi implementada. Dados locais inválidos não são sobrescritos automaticamente.
+Os dados são separados por conta no banco SQLite; o navegador mantém cópia temporária de alterações ainda não salvas. Não cadastrar dados de pacientes. Faça backup do volume do banco. A migração do armazenamento antigo do navegador e a importação de JSON exigem confirmação explícita; mudar de domínio não transfere automaticamente o armazenamento antigo. Consulte docs/DOMINIO.md.
 
 ## Verificação
 
