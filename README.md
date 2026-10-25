@@ -97,3 +97,9 @@ A rota Next.js `/api/optimizer` faz a ponte com a API. Falha de conexão ou resp
 ## Layout mobile first
 
 Os estilos responsivos em `apps/web/app/responsive.css` partem de uma coluna e navegação inferior. Campos usam fonte de 16px para evitar zoom automático no iPhone, botões têm área de toque de pelo menos 44px e formulários abrem como painel inferior em telas pequenas, com rolagem do fundo bloqueada. A partir de 640px entram colunas adicionais; a partir de 1024px, navegação lateral. Testes verificam as cinco telas, login, cadastro inicial e diálogos nas larguras de 320, 390, 768, 1024 e 1440px.
+
+## Teto de horas e comparação com alerta
+
+A disponibilidade mensal é limitada a 280 horas na interface e na API. As opções principais continuam dentro da disponibilidade escolhida. Se a meta não for viável nessas horas, o motor busca separadamente uma única simulação acima da disponibilidade, mantendo os limites de unidades e o teto absoluto de 280 horas totais (trabalhos já previstos + adicionais). Prioriza atingir a meta com a menor sobra financeira; se não der, mostra o maior alcance possível. O cartão vermelho informa o excesso em horas, o total do mês e a diferença para a meta. É apenas uma comparação: não altera a disponibilidade, não pode ser salva como cenário regular e não aumenta quantidades máximas automaticamente.
+
+Se não houver combinação extra possível até 280h, ou a busca adicional superar 500 mil combinações, o app explica a limitação e preserva os resultados normais. Cadastros históricos acima do teto não são apagados: é necessário corrigir a disponibilidade antes de otimizar ou reutilizá-la em outro mês.

@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field, ConfigDict, model_validator
 from typing import Literal
 from finance import after_tax
-from engine import ENGINE_VERSION, optimize
+from engine import ENGINE_VERSION, MAX_MONTHLY_MINUTES, optimize
 
 app = FastAPI(title='FinanceMed AI', version='0.1.0')
 
@@ -14,7 +14,7 @@ class Work(BaseModel):
     gross_cents: int | None = Field(default=None, strict=True, gt=0, le=100_000_000)
     tax_regime: Literal['PF', 'PJ'] | None = None
     net_cents: int = Field(strict=True, gt=0, le=100_000_000)
-    minutes: int = Field(strict=True, ge=1, le=43200)
+    minutes: int = Field(strict=True, ge=1, le=MAX_MONTHLY_MINUTES)
     quantity: int = Field(strict=True, ge=0, le=1000)
     max_extra: int = Field(strict=True, ge=0, le=100)
 
@@ -33,7 +33,7 @@ class OptimizationRequest(BaseModel):
     works: list[Work] = Field(max_length=6)
     expenses_cents: int = Field(strict=True, ge=0, le=1_000_000_000)
     target_cents: int = Field(strict=True, gt=0, le=1_000_000_000)
-    available_minutes: int = Field(strict=True, ge=0, le=43200)
+    available_minutes: int = Field(strict=True, ge=0, le=MAX_MONTHLY_MINUTES)
 
 @app.get('/api/health')
 def health():

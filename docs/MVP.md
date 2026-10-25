@@ -7,3 +7,5 @@ Arquitetura: Next.js + TypeScript, CSS responsivo e Lucide; FastAPI com motor de
 Os cenários salvos são snapshots, não lançamentos. Não existe IA generativa nesta etapa. O primeiro acesso exige preenchimento guiado sem valores de exemplo. A sessão de demonstração não substitui autenticação real. Dados novos não são misturados entre competências.
 
 O cadastro de trabalho agora recebe bruto e PF/PJ, com desconto fixo estimado de 27%/15%, arredondado por unidade em centavos. Entradas legadas líquidas não recebem desconto duplicado. A API valida a consistência dos valores. Mês novo oferece revisão, reaproveitamento explícito ou cadastro do zero; os meses e snapshots anteriores permanecem separados.
+
+Disponibilidade limitada a 280h/mês. Quando os limites atuais impedem a meta, há uma simulação extra em vermelho que pode exceder a disponibilidade configurada, mas nunca 280h totais nem os limites de unidades. Ela fica fora dos resultados regulares e não é aplicada ou salva automaticamente.

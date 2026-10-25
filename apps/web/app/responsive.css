@@ -274,3 +274,13 @@ footer button { min-height: 44px; font-size: 12px; }
 .month-summary dd { margin: 0; font-weight: 600; }
 .month-actions { display: grid; gap: 12px; margin-top: 24px; }
 .month-actions > .text-link { justify-self: center; }
+.overtime-section { margin-top: 30px; }
+.overtime-section > .section-heading { margin-bottom: 20px; }
+.overtime-section h2 { color: #a13d38; line-height: 1.6; }
+.overtime-card { border: 2px solid #ce746a; background: #fff8f6; max-width: 680px; }
+.overtime-card .scenario-badge { color: #a33e36; background: #fae1dc; font-size: 12px; }
+.overtime-card h3, .overtime-card .scenario-total b, .overtime-card .scenario-composition strong { color: #a13d38; }
+.overtime-alert { display: grid; gap: 8px; color: #9c3c34; padding: 16px; background: #fbe8e3; border-radius: 10px; font-size: 14px; line-height: 1.8; }
+.overtime-alert span { font-size: 13px; }
+.overtime-card .overtime-outcome { font-size: 14px; line-height: 1.8; color: #a13d38; }
+.overtime-card .form-hint { color: #9e665f; }

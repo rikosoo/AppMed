@@ -129,3 +129,62 @@ def test_partial_tax_metadata_is_rejected_while_legacy_net_is_kept():
     assert client.post('/api/optimizer',json=payload).status_code == 200
     payload['works'][0]['tax_regime'] = 'PF'
     assert client.post('/api/optimizer',json=payload).status_code == 422
+
+
+def test_overtime_simulation_reaches_target_without_mixing_regular_options():
+    works = [work('c',50000,60,100,100),work('p',120000,720,0,4)]
+    result = optimize(works,0,7000000,110*60)
+    assert result['status'] == 'infeasible'
+    assert all(s['total_minutes'] <= 110*60 for s in result['scenarios'])
+    warning = result['overtime_scenario']
+    assert warning['reaches_target']
+    assert warning['counts'] == [40,0]
+    assert warning['total_minutes'] == 140*60
+    assert warning['excess_minutes'] == 30*60
+    assert warning['exceeds_availability']
+    assert warning['projected_cents'] == 7000000
+
+
+def test_screenshot_overtime_respects_unit_limits_and_reports_missing_income():
+    result = optimize([work('c',50000,60,112,9),work('p',120000,720,2,2)],0,8500000,160*60)
+    assert result['maximum_extra_cents'] == 570000
+    warning = result['overtime_scenario']
+    assert warning['counts'] == [9,2]
+    assert warning['total_minutes'] == 169*60
+    assert warning['excess_minutes'] == 9*60
+    assert warning['extra_cents'] == 690000
+    assert not warning['reaches_target']
+    assert warning['shortfall_cents'] == 1970000
+
+
+def test_overtime_stops_at_280_total_hours_including_existing_work():
+    result = optimize([work('c',50000,60,270,100)],0,14500000,275*60)
+    warning = result['overtime_scenario']
+    assert warning['counts'] == [10]
+    assert warning['total_minutes'] == 280*60
+    assert warning['hard_limit_minutes'] == 280*60
+    assert not warning['reaches_target']
+    assert warning['shortfall_cents'] == 500000
+    assert optimize([work('c',50000,60,281,100)],0,99999999,280*60)['overtime_scenario'] is None
+
+
+def test_no_overtime_without_room_or_without_additional_units():
+    assert optimize([work(extra=0)],0,999999,60)['overtime_scenario'] is None
+    assert optimize([work(extra=100)],0,999999999,280*60)['overtime_scenario'] is None
+
+
+def test_api_and_engine_reject_more_than_280_available_hours():
+    import pytest
+    payload = dict(works=[work()],expenses_cents=0,target_cents=500000,available_minutes=280*60+1)
+    assert client.post('/api/optimizer',json=payload).status_code == 422
+    with pytest.raises(ValueError,match='280'):
+        optimize([work()],0,500000,280*60+1)
+    payload['available_minutes'] = 280*60
+    assert client.post('/api/optimizer',json=payload).status_code == 200
+
+
+def test_large_optional_search_does_not_block_regular_results():
+    result = optimize([work(str(i),minutes=1,extra=100) for i in range(6)],0,1000000,0)
+    assert result['status'] == 'infeasible'
+    assert result['overtime_scenario'] is None
+    assert '500 mil' in result['overtime_note']
