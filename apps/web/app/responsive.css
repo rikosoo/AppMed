@@ -284,3 +284,7 @@ footer button { min-height: 44px; font-size: 12px; }
 .overtime-alert span { font-size: 13px; }
 .overtime-card .overtime-outcome { font-size: 14px; line-height: 1.8; color: #a13d38; }
 .overtime-card .form-hint { color: #9e665f; }
+.overtime-units { padding: 16px; margin: 18px 0; border: 1px solid #e4b7ad; border-radius: 10px; color: #9c3c34; font-size: 13px; line-height: 1.9; overflow-wrap: anywhere; }
+.overtime-units ul { min-height: auto; list-style: disc; padding-left: 20px; margin: 10px 0; }
+.overtime-units li { display: list-item; font-size: 13px; border: 0; padding: 5px 0; }
+.overtime-units p, .overtime-card .capacity-note { font-size: 13px; line-height: 1.9; color: #a15c50; margin: 14px 0; }

@@ -113,11 +113,12 @@ test('screenshot: partial mixes, expanded limits and readable server failures',a
  await expect(page.getByText('R$ 43.800,00',{exact:true})).toBeVisible();
  await page.getByRole('button',{name:'Encontrar combinações'}).click();
  await expect(page.getByRole('heading',{name:'A meta precisa de um ajuste'})).toBeVisible();
- await expect(page.locator('.scenario')).toHaveCount(3);
+ await expect(page.locator('.results .scenario')).toHaveCount(3);
  await expect(page.locator('.scenario').first()).toContainText('9 × Consultório particular');
  await expect(page.locator('.scenario').first()).toContainText('2 × Plantão no hospital');
  await expect(page.locator('.scenario').first()).toContainText('33h');
  await expect(page.locator('.scenario-status.partial')).toHaveCount(3);
+ await expect(page.locator('.overtime-card')).toContainText('258 × Consultório particular');
  await expect(page.locator('.scenario').first()).toContainText('36.900,00');
  await page.getByLabel('Limite adicional Consultório particular').fill('100');
  await page.getByRole('button',{name:'Encontrar combinações'}).click();

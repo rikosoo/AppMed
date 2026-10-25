@@ -3,37 +3,59 @@ from itertools import product
 from math import prod
 from fractions import Fraction
 
-ENGINE_VERSION = '1.3.0'
+ENGINE_VERSION = '1.4.0'
 MAX_MONTHLY_MINUTES = 280 * 60
 
 
 def overtime_scenario(works, base_minutes, available_minutes, net, gap):
+    """Exact unbounded knapsack: highest net income within remaining minutes.
+
+    Only this hypothetical comparison relaxes positive per-work unit limits.
+    A zero max_extra still disables the activity. Complexity O(280*60*n).
+    """
     room = MAX_MONTHLY_MINUTES - base_minutes
     if room <= 0 or gap <= 0:
         return None, 'Não há espaço adicional até o teto de 280h, ou a meta já foi alcançada.'
-    bounds = [min(w['max_extra'], room // w['minutes']) for w in works]
-    if prod(b + 1 for b in bounds) > 500_000:
-        return None, 'Reduza os limites de unidades para comparar a simulação extra (máximo de 500 mil combinações).'
-    best = None
-    best_key = None
-    for counts in product(*(range(b + 1) for b in bounds)):
-        minutes = sum(n*w['minutes'] for n,w in zip(counts,works))
-        total = base_minutes + minutes
-        if minutes <= 0 or total <= available_minutes or total > MAX_MONTHLY_MINUTES:
-            continue
-        income = sum(n*w['net_cents'] for n,w in zip(counts,works))
-        key = (0, income-gap, minutes) if income >= gap else (1, gap-income, minutes)
-        if best_key is None or key < best_key:
-            best_key = key
-            best = dict(counts=list(counts), extra_cents=income, minutes=minutes,
-                        projected_cents=net+income, total_minutes=total,
-                        label='Simulação acima da disponibilidade', reaches_target=income>=gap,
-                        shortfall_cents=max(0,gap-income), exceeds_availability=True,
-                        excess_minutes=total-available_minutes, hard_limit_minutes=MAX_MONTHLY_MINUTES,
-                        items=[dict(work_id=w['id'],name=w['name'],quantity=n,
-                                    extra_cents=n*w['net_cents'],minutes=n*w['minutes'])
-                               for n,w in zip(counts,works) if n>0])
-    return best, None if best else 'Nenhuma combinação excede sua disponibilidade respeitando os limites de unidades e o teto de 280h.'
+    enabled = [(i,w) for i,w in enumerate(works) if w['max_extra'] > 0 and w['minutes'] <= room]
+    if not enabled:
+        return None, 'Nenhuma atividade habilitada cabe nas horas restantes até 280h. Limite zero mantém a atividade excluída.'
+    values = [-1] * (room+1)
+    choice = [-1] * (room+1)
+    values[0] = 0
+    for minute in range(1,room+1):
+        for index,work in enabled:
+            before = minute-work['minutes']
+            if before >= 0 and values[before] >= 0:
+                income = values[before]+work['net_cents']
+                if income > values[minute]:
+                    values[minute] = income
+                    choice[minute] = index
+    used = max(range(room+1),key=lambda minute:(values[minute],-minute))
+    if used == 0:
+        return None, 'Nenhuma atividade cabe nas horas restantes até 280h.'
+    counts = [0]*len(works)
+    cursor = used
+    while cursor:
+        index = choice[cursor]
+        counts[index] += 1
+        cursor -= works[index]['minutes']
+    income = values[used]
+    total = base_minutes+used
+    exceeded = [dict(work_id=w['id'],name=w['name'],configured_max=w['max_extra'],
+                     simulated_quantity=n,excess_quantity=n-w['max_extra'])
+                for n,w in zip(counts,works) if n>w['max_extra']]
+    if total <= available_minutes and not exceeded:
+        return None, 'A maior renda possível até 280h já está dentro dos limites configurados.'
+    return dict(counts=counts,extra_cents=income,minutes=used,projected_cents=net+income,
+                total_minutes=total,label='Maior renda estimada até 280h',
+                reaches_target=income>=gap,shortfall_cents=max(0,gap-income),
+                exceeds_availability=total>available_minutes,
+                excess_minutes=max(0,total-available_minutes),hard_limit_minutes=MAX_MONTHLY_MINUTES,
+                unused_capacity_minutes=room-used,unit_limit_excess=exceeded,
+                algorithm='unbounded_knapsack_minutes_v1',objective='maximum_net_income',
+                items=[dict(work_id=w['id'],name=w['name'],quantity=n,
+                            extra_cents=n*w['net_cents'],minutes=n*w['minutes'])
+                       for n,w in zip(counts,works) if n>0]), None
 
 
 def optimize(works, expenses_cents, target_cents, available_minutes):

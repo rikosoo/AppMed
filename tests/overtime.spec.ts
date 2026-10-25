@@ -9,8 +9,8 @@ async function seed(page:Page,available=110*60){
 test('overtime is a separate red alert with explicit excess and total hours',async({page})=>{
  await seed(page);await nav(page,'Otimizar').click();await page.getByRole('button',{name:'Encontrar combinações'}).click();
  await expect(page.locator('.results .scenario')).toHaveCount(3);
- const warning=page.getByRole('region',{name:'Simulação acima das horas disponíveis'});
- await expect(warning).toBeVisible();await expect(warning).toContainText('40 × Consultório particular');await expect(warning).toContainText('30h');await expect(warning).toContainText('140h');await expect(warning).toContainText('teto: 280h');await expect(warning).toContainText('Alcança a meta');
+ const warning=page.getByRole('region',{name:'Simulação de capacidade até 280h'});
+ await expect(warning).toBeVisible();await expect(warning).toContainText('180 × Consultório particular');await expect(warning).toContainText('170h');await expect(warning).toContainText('280h');await expect(warning).toContainText('teto: 280h');await expect(warning).toContainText('Alcança a meta');await expect(warning).toContainText('limite atual: 100');await expect(warning).toContainText('maior renda líquida');
  expect(await page.locator('.overtime-card').evaluate(el=>getComputedStyle(el).borderTopColor)).toBe('rgb(206, 116, 106)');
  await expect(warning.getByRole('button',{name:'Salvar cenário'})).toHaveCount(0);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
@@ -22,4 +22,16 @@ test('monthly availability rejects 281 hours and legacy over-limit values can be
  await expect(field).toHaveAttribute('max','280');await field.fill('281');await page.getByRole('button',{name:'Salvar meta',exact:true}).click();expect(await field.evaluate(el=>(el as HTMLInputElement).validity.rangeOverflow)).toBeTruthy();
  await field.fill('280');await page.getByRole('button',{name:'Salvar meta',exact:true}).click();await expect(page.locator('.alert.error')).toHaveCount(0);
  await nav(page,'Otimizar').click();await page.getByRole('button',{name:'Encontrar combinações'}).click();await expect(page.locator('.results')).toBeVisible();await expect(page.locator('.overtime-card')).toHaveCount(0);
+});
+
+test('expanded capacity respects 280h and remains mobile first at narrow widths',async({page})=>{
+ await seed(page);await nav(page,'Otimizar').click();await page.getByRole('button',{name:'Encontrar combinações'}).click();
+ const warning=page.getByRole('region',{name:'Simulação de capacidade até 280h'});await expect(warning).toBeVisible();
+ for(const width of [320,390,768,1024,1440]){
+  await page.setViewportSize({width,height:844});
+  await expect(warning).toContainText('180 × Consultório particular');await expect(warning).toContainText('280h');await expect(warning).toContainText('limite atual: 100');
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
+ }
+ const unchanged=await page.evaluate(()=>{const data=JSON.parse(localStorage.getItem('financemed.v1')!);return Object.values(data.months).map((p:any)=>p.works[0].max_extra);});
+ expect(unchanged).toEqual([100]);
 });
