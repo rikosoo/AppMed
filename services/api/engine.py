@@ -3,7 +3,7 @@ from itertools import product
 from math import prod
 from fractions import Fraction
 
-ENGINE_VERSION = '1.1.0'
+ENGINE_VERSION = '1.2.0'
 
 
 def optimize(works, expenses_cents, target_cents, available_minutes):

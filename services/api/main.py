@@ -1,5 +1,7 @@
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, model_validator
+from typing import Literal
+from finance import after_tax
 from engine import ENGINE_VERSION, optimize
 
 app = FastAPI(title='FinanceMed AI', version='0.1.0')
@@ -9,10 +11,22 @@ class Work(BaseModel):
     id: str = Field(min_length=1, max_length=100)
     name: str = Field(min_length=1, max_length=100)
     type: str = Field(default='Outro', max_length=50)
+    gross_cents: int | None = Field(default=None, strict=True, gt=0, le=100_000_000)
+    tax_regime: Literal['PF', 'PJ'] | None = None
     net_cents: int = Field(strict=True, gt=0, le=100_000_000)
     minutes: int = Field(strict=True, ge=1, le=43200)
     quantity: int = Field(strict=True, ge=0, le=1000)
     max_extra: int = Field(strict=True, ge=0, le=100)
+
+    @model_validator(mode='after')
+    def validate_estimated_tax(self):
+        if self.gross_cents is None and self.tax_regime is None:
+            return self  # Preserve legacy amounts already entered as net.
+        if self.gross_cents is None or self.tax_regime is None:
+            raise ValueError('Informe o valor bruto e selecione PF ou PJ.')
+        if self.net_cents != after_tax(self.gross_cents, self.tax_regime):
+            raise ValueError('O líquido deve corresponder ao desconto estimado do regime escolhido.')
+        return self
 
 class OptimizationRequest(BaseModel):
     model_config = ConfigDict(extra='forbid')

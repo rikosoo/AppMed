@@ -108,3 +108,24 @@ def test_only_existing_legal_nonzero_combinations_are_returned():
     assert len(result['scenarios']) == 1
     assert result['scenarios'][0]['counts'] == [1]
     assert optimize([work(extra=0)],0,999999,60)['scenarios'] == []
+
+
+def test_pf_pj_estimates_and_server_validation():
+    from finance import after_tax
+    assert after_tax(100000, 'PF') == 73000
+    assert after_tax(100000, 'PJ') == 85000
+    assert after_tax(50001, 'PF') == 36501
+    for regime, net in [('PF',73000),('PJ',85000)]:
+        payload = dict(works=[dict(**work(net=net,quantity=1),gross_cents=100000,tax_regime=regime)],expenses_cents=10000,target_cents=200000,available_minutes=600)
+        response = client.post('/api/optimizer',json=payload)
+        assert response.status_code == 200
+        assert response.json()['projected_cents'] == net-10000
+        payload['works'][0]['net_cents'] = 100000
+        assert client.post('/api/optimizer',json=payload).status_code == 422
+
+
+def test_partial_tax_metadata_is_rejected_while_legacy_net_is_kept():
+    payload = dict(works=[work(net=50000)],expenses_cents=0,target_cents=100000,available_minutes=120)
+    assert client.post('/api/optimizer',json=payload).status_code == 200
+    payload['works'][0]['tax_regime'] = 'PF'
+    assert client.post('/api/optimizer',json=payload).status_code == 422

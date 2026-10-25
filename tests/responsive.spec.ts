@@ -47,7 +47,7 @@ test('all five views and edit dialog remain usable across screen sizes',async({p
   const dialog=page.getByRole('dialog');await expect(dialog).toBeVisible();
   const box=await dialog.boundingBox();expect(box!.x).toBeGreaterThanOrEqual(0);expect(box!.x+box!.width).toBeLessThanOrEqual(width);
   expect(await page.evaluate(()=>document.body.style.overflow)).toBe('hidden');
-  const amount=page.getByLabel('Ganho líquido / unidade');expect(await amount.evaluate(el=>parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(16);
+  const amount=page.getByLabel('Valor bruto por unidade');expect(await amount.evaluate(el=>parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(16);
   await page.getByRole('button',{name:'Fechar',exact:true}).click();
   expect(await page.evaluate(()=>document.body.style.overflow)).not.toBe('hidden');
  }
