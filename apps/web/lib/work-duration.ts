@@ -1,15 +1,13 @@
-/** Hours.minutes input: 0.3 and 0,30 both mean thirty minutes, never decimal hours. */
+/** Decimal hours, rounded to the integer minutes used by the planning engine. */
 export function parseWorkDuration(value:string):number|null{
- const match=/^(\d{1,3})(?:[.,](\d{1,2}))?$/.exec(value.trim());
- if(!match)return null;
- const hours=Number(match[1]);
- const minutes=Number((match[2]||'').padEnd(2,'0'));
- const total=hours*60+minutes;
- return minutes<60&&total>=1&&total<=360*60?total:null;
+ const normalized=value.trim().replace(',','.');
+ if(!/^(?:\d{1,3}(?:\.\d{1,6})?|\.\d{1,6})$/.test(normalized))return null;
+ const hours=Number(normalized),minutes=Math.round(hours*60);
+ return hours<=360&&minutes>=1?minutes:null;
 }
 export function formatWorkDuration(minutes:number):string{
- const whole=Math.floor(minutes/60),rest=minutes%60;
- return rest?`${whole},${String(rest).padStart(2,'0')}`:String(whole);
+ // Four decimals preserve every whole-minute duration when rounded on save.
+ return String(Number((minutes/60).toFixed(4))).replace('.',',');
 }
 export function durationLabel(minutes:number):string{
  const whole=Math.floor(minutes/60),rest=minutes%60;

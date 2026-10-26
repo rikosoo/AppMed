@@ -20,7 +20,7 @@ export default function Onboarding({ month, onComplete, onBack }: { month: strin
     const f = new FormData(event.currentTarget);
     const name = String(f.get('name')).trim();
     const minutes = parseWorkDuration(String(f.get('hours')));
-    if(minutes===null){setError('Informe horas.minutos válidos, até 360h.');return;}
+    if(minutes===null){setError('Informe horas decimais válidas, até 360h.');return;}
     if (!name) { setError('Informe o nome do trabalho.'); return; }
     setWorks([...works, { id: crypto.randomUUID(), name, type: String(f.get('type')), ...paymentFields(f), minutes, quantity: Number(f.get('quantity')), max_extra: Number(f.get('extra')) }]);
     setShowWork(false); setError('');

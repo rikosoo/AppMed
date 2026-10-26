@@ -1,13 +1,13 @@
 import {test,expect} from '@playwright/test';
 import {accountLogin} from './helpers/auth';
 
-test('hours.minutes entry persists real minutes through onboarding, editing and reload',async({page})=>{
+test('decimal hours entry persists real minutes through onboarding, editing and reload',async({page})=>{
  await page.goto('/');await accountLogin(page);
  await page.getByLabel('Nome do trabalho').fill('Consulta curta');
  await page.getByLabel('Tipo de trabalho').selectOption('Consulta');
  await page.getByLabel('Forma de recebimento').selectOption('PF');
  await page.getByLabel('Valor bruto por unidade').fill('500');
- await page.getByLabel('Horas por unidade',{exact:true}).fill('0.3');
+ await page.getByLabel('Horas por unidade',{exact:true}).fill('0.5');
  await expect(page.locator('.work-duration-hint strong')).toHaveText('30 min');
  await page.getByLabel('Unidades previstas no mês').fill('1');
  await page.getByLabel('Máximo de unidades extras').fill('5');
@@ -23,13 +23,13 @@ test('hours.minutes entry persists real minutes through onboarding, editing and 
  const nav=page.getByRole('navigation',{name:test.info().project.name==='mobile'?'Navegação móvel':'Menu principal'});
  await nav.getByRole('button',{name:'Trabalhos',exact:true}).click();
  await page.getByRole('button',{name:'Editar Consulta curta'}).click();
- const field=page.getByLabel('Horas / unidade');await expect(field).toHaveValue('0,30');
- await field.fill('0,75');await page.getByRole('button',{name:'Salvar trabalho'}).click();
+ const field=page.getByLabel('Horas / unidade');await expect(field).toHaveValue('0,5');
+ await field.fill('abc');await page.getByRole('button',{name:'Salvar trabalho'}).click();
  await expect(page.getByRole('dialog')).toBeVisible();expect(await field.evaluate((input:HTMLInputElement)=>input.checkValidity())).toBeFalsy();
  await field.fill('360.01');expect(await field.evaluate((input:HTMLInputElement)=>input.checkValidity())).toBeFalsy();
- await field.fill('1,30');await expect(page.locator('.work-duration-hint strong')).toHaveText('1h30');
+ await field.fill('1,5');await expect(page.locator('.work-duration-hint strong')).toHaveText('1h30');
  await page.getByRole('button',{name:'Salvar trabalho'}).click();await expect.poll(savedMinutes).toBe(90);
  await page.reload();await page.getByRole('navigation',{name:test.info().project.name==='mobile'?'Navegação móvel':'Menu principal'}).getByRole('button',{name:'Trabalhos',exact:true}).click();
- await page.getByRole('button',{name:'Editar Consulta curta'}).click();await expect(page.getByLabel('Horas / unidade')).toHaveValue('1,30');
+ await page.getByRole('button',{name:'Editar Consulta curta'}).click();await expect(page.getByLabel('Horas / unidade')).toHaveValue('1,5');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
 });
