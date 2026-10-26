@@ -20,7 +20,8 @@
     "mobile:android": "npm run android -w apps/mobile",
     "mobile:ios": "npm run ios -w apps/mobile",
     "test:native": "playwright test -c playwright.native.config.ts",
-    "test:mobile-config": "node --test tests/mobile-config.test.cjs"
+    "test:mobile-config": "node --test tests/mobile-config.test.cjs",
+    "test:duration": "node --experimental-strip-types --test tests/work-duration.test.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1"

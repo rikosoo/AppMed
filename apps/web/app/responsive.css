@@ -308,3 +308,4 @@ footer button { min-height: 44px; font-size: 12px; }
 .native-app body{padding-top:env(safe-area-inset-top);padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
 .native-app .session-controls{top:calc(18px + env(safe-area-inset-top))}
 .native-offline{position:fixed;inset:auto 12px calc(90px + env(safe-area-inset-bottom));z-index:190;background:#fff3dc;color:#725019;padding:14px 18px;border:1px solid #eed3a6;border-radius:12px;box-shadow:0 6px 24px #0002;font-size:12px;line-height:1.6;pointer-events:none}
+.work-duration-field{min-width:0}.work-duration-field label{margin-bottom:6px}.work-duration-hint{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin:0 0 18px;color:var(--muted);line-height:1.5}.work-duration-hint small{font-size:11px}.work-duration-hint strong{font-size:12px;color:var(--green);font-weight:600}
