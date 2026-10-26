@@ -113,3 +113,9 @@ O motor usa centavos e minutos inteiros. Testes verificam o menor tempo contra b
 ## Publicar na AWS
 
 Veja o passo a passo em [docs/AWS.md](docs/AWS.md). Os arquivos em `deploy/` iniciam Next.js, FastAPI e Caddy com HTTPS e acesso restrito. O servidor publicado usa Docker Compose em modo de produção, não `npm run dev`. Para atualizar uma instalação já configurada: `bash scripts/update-server.sh`, executado no SSH do servidor.
+
+## Aplicativos Android e iOS
+
+A base Capacitor compartilha a interface com a web e a empacota localmente. Consulte [MOBILE.md](docs/MOBILE.md) para sincronizar, abrir no Android Studio/Xcode e testar. `npm run mobile:sync` gera os assets dos dois projetos. A publicação e os testes em aparelhos ainda são etapas separadas.
+
+O deploy agora usa somente o login próprio do FinanceMed; a janela externa de senha do Caddy foi retirada para permitir o transporte nativo de sessão. Atualize o servidor antes de testar os aplicativos.

@@ -1,4 +1,6 @@
 'use client';
+import { exportJson } from '@/lib/export-json';
+import { apiFetch } from '@/lib/api-client';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Activity, ArrowDownLeft, ArrowRight, ArrowUpRight, BriefcaseBusiness, Check, ChevronLeft, ChevronRight, CircleHelp, Clock3, Download, FlaskConical, LayoutDashboard, Leaf, Menu, Pencil, Plus, ReceiptText, ShieldCheck, Sparkles, Target, Trash2, Wallet, X, CheckCircle2 } from 'lucide-react';
 import { cents, currency, emptyPlan, hours, MAX_MONTHLY_HOURS, MAX_MONTHLY_MINUTES, validStore, type Expense, type Plan, type Result, type Saved, type Store, type Work } from '@/lib/model';
@@ -27,6 +29,7 @@ function Dashboard() {
  useEffect(()=>{try{const raw=localStorage.getItem(storageKey);if(!raw)return;const parsed:unknown=JSON.parse(raw);if(!validStore(parsed)){setRecoveryRaw(raw);throw Error('invalid');}if(Object.values(parsed.months).some(p=>p.demo))localStorage.setItem('financemed.legacy-demo.v1',raw);const months=Object.fromEntries(Object.entries(parsed.months).filter(([,p])=>!p.demo));if(Object.keys(months).length)setLegacy({version:1,months});}catch{try{setRecoveryRaw(localStorage.getItem(storageKey));}catch{}setStorageError('Não foi possível ler seus dados locais antigos. Exporte uma cópia antes de limpar o armazenamento do navegador.');}},[]);
  useEffect(()=> { if(toast){const id=setTimeout(()=>setToast(''),4000);return()=>clearTimeout(id);} },[toast]);
  useEffect(()=> { if(!modal)return; const previousOverflow=document.body.style.overflow;document.body.style.overflow='hidden'; const close=(e:KeyboardEvent)=>{if(e.key==='Escape')setModal(null);};document.addEventListener('keydown',close);const previous=document.activeElement as HTMLElement; const timer=setTimeout(()=>document.querySelector<HTMLElement>('.modal input, .modal button')?.focus(),0); return()=>{document.body.style.overflow=previousOverflow;document.removeEventListener('keydown',close);clearTimeout(timer);previous?.focus();}; },[modal]);
+ useEffect(()=>{const back=(event:Event)=>{if(modal){event.preventDefault();setModal(null);}else if(tab!==0){event.preventDefault();setTab(0);}};document.addEventListener('financemed:back',back);return()=>document.removeEventListener('financemed:back',back);},[modal,tab]);
  const plan: Plan=store.months[month]||emptyPlan();
  const inputSignature=JSON.stringify([month,plan.works,plan.expenses,plan.target,plan.available]);
  const latestInput=useRef(inputSignature); latestInput.current=inputSignature;
@@ -35,12 +38,12 @@ function Dashboard() {
  const notify=(s:string)=>setToast(s);
  const add=(kind:'work'|'expense', item:Work|Expense|null=null)=>{setEditing(item);setModal(kind);};
  const moveMonth=(delta:number)=>{const d=new Date(`${month}-15T12:00:00`);d.setMonth(d.getMonth()+delta);setMonth(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);setResult(null);setError('');};
- const exportLegacy=()=>{const url=URL.createObjectURL(new Blob([recoveryRaw??''],{type:'application/json'}));const link=document.createElement('a');link.href=url;link.download='financemed-dados-locais-antigos.json';link.click();URL.revokeObjectURL(url);};
- const exportData=()=>{const url=URL.createObjectURL(new Blob([JSON.stringify(store,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=`financemed-${month}.json`;a.click();URL.revokeObjectURL(url);notify('Cópia dos seus dados exportada.');};
+ const exportLegacy=async()=>{try{await exportJson(recoveryRaw??'','financemed-dados-locais-antigos.json');}catch{notify('Não foi possível exportar. Tente novamente.');}};
+ const exportData=async()=>{try{await exportJson(JSON.stringify(store,null,2),`financemed-${month}.json`);notify('Cópia dos seus dados exportada.');}catch{notify('Exportação não concluída. Tente novamente.');}};
  async function runOptimizer(){
   const requestedInput=inputSignature;setBusy(true);setError('');setResult(null);
   try {
-   const response=await fetch('/api/optimizer',{method:'POST',headers:{'Content-Type':'application/json','X-FinanceMed-Account':account.id},body:JSON.stringify({works:plan.works,expenses_cents:expenses,target_cents:plan.target,available_minutes:plan.available}),signal:AbortSignal.timeout(25000)});
+   const response=await apiFetch('/api/optimizer',{method:'POST',headers:{'Content-Type':'application/json','X-FinanceMed-Account':account.id},body:JSON.stringify({works:plan.works,expenses_cents:expenses,target_cents:plan.target,available_minutes:plan.available}),signal:AbortSignal.timeout(25000)});
    const raw=await response.text();
    let data;
    try{data=JSON.parse(raw);}catch{throw Error('Não foi possível obter o cálculo. Execute npm run dev para iniciar a interface e a API; confira também o terminal da API na porta 8000.');}

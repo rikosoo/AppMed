@@ -5,7 +5,7 @@ O desenvolvimento não depende de IP fixo. Para manter `app.75hard.club` estáve
 1. No console EC2, aloque um **Elastic IP** e associe à instância que executa o Docker. A AWS cobra pelo IPv4 público; confira o preço da sua região.
 2. No provedor DNS de `75hard.club`, crie um registro **A**: nome `app`, valor igual ao Elastic IP. Não altere os demais registros do domínio. Se usar proxy DNS, deixe inicialmente apenas DNS para validar o certificado diretamente.
 3. No Security Group associado à instância, permita TCP 80 e 443 de `0.0.0.0/0`; mantenha SSH limitado ao seu IP. Não publique as portas internas 3000 e 8000.
-4. Depois de atualizar o código e antes de recriar os serviços, ajuste `deploy/.env`, preservando as variáveis de proteção já existentes:
+4. Depois de atualizar o código e antes de recriar os serviços, ajuste `deploy/.env`, preservando as demais variáveis existentes:
 
 ```env
 APP_DOMAIN=app.75hard.club
@@ -26,7 +26,7 @@ sudo docker compose --env-file deploy/.env -f deploy/compose.prod.yml up -d --wa
 sudo docker compose --env-file deploy/.env -f deploy/compose.prod.yml logs --tail=80 caddy
 ```
 
-Contas reais usam cookies seguros e precisam de HTTPS nesta configuração de produção. O acesso pelo IP sem HTTPS serve apenas para o teste anterior; não use `APP_DOMAIN=:80` nesta configuração. O cadastro substitui o antigo login fixo `123456`; crie sua própria senha de pelo menos 8 caracteres. A proteção externa por senha do Caddy continua independente do login do aplicativo.
+Contas reais usam cookies seguros e precisam de HTTPS nesta configuração de produção. O acesso pelo IP sem HTTPS serve apenas para o teste anterior; não use `APP_DOMAIN=:80` nesta configuração. O cadastro substitui o antigo login fixo `123456`; crie sua própria senha de pelo menos 8 caracteres. A versão mobile usa apenas o login próprio do aplicativo; as variáveis antigas BASIC_AUTH deixam de ser utilizadas.
 
 ## Persistência e backup
 

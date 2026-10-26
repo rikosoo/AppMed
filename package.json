@@ -2,7 +2,8 @@
   "name": "financemed-ai",
   "private": true,
   "workspaces": [
-    "apps/web"
+    "apps/web",
+    "apps/mobile"
   ],
   "scripts": {
     "dev": "node scripts/dev.mjs",
@@ -14,9 +15,17 @@
     "test:proxy": "node --test tests/api-proxy.test.mjs",
     "dev:web": "node scripts/dev.mjs --web-only",
     "dev:api": "node scripts/dev.mjs --api-only",
-    "test:launcher": "node --test tests/dev-launcher.test.mjs"
+    "test:launcher": "node --test tests/dev-launcher.test.mjs",
+    "mobile:sync": "npm run sync -w apps/mobile",
+    "mobile:android": "npm run android -w apps/mobile",
+    "mobile:ios": "npm run ios -w apps/mobile",
+    "test:native": "playwright test -c playwright.native.config.ts",
+    "test:mobile-config": "node --test tests/mobile-config.test.cjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1"
+  },
+  "engines": {
+    "node": ">=22.12.0"
   }
 }

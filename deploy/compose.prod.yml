@@ -53,8 +53,6 @@ services:
       - "${BIND_ADDRESS:-0.0.0.0}:${HTTPS_PORT:-443}:443"
     environment:
       APP_DOMAIN: ${APP_DOMAIN:?Defina APP_DOMAIN em deploy/.env}
-      BASIC_AUTH_USER: ${BASIC_AUTH_USER:?Defina BASIC_AUTH_USER em deploy/.env}
-      BASIC_AUTH_HASH: ${BASIC_AUTH_HASH:?Defina BASIC_AUTH_HASH em deploy/.env}
     volumes:
       - caddy_data:/data
       - caddy_config:/config

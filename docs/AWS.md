@@ -1,12 +1,12 @@
 # Publicar o FinanceMed AI na AWS e atualizar o servidor
 
-Este guia usa **AWS Lightsail + Ubuntu 24.04 LTS + Docker Compose + Caddy**. O Lightsail é uma máquina virtual gerenciada pela AWS. A interface Next.js e a API FastAPI ficam em contêineres; o Caddy fornece HTTPS automático e uma senha extra de acesso. Não use `npm run dev` no servidor publicado.
+Este guia usa **AWS Lightsail + Ubuntu 24.04 LTS + Docker Compose + Caddy**. O Lightsail é uma máquina virtual gerenciada pela AWS. A interface Next.js e a API FastAPI ficam em contêineres; o Caddy fornece HTTPS automático. Não use `npm run dev` no servidor publicado.
 
 ## Antes de começar
 
 - Conta AWS e um domínio ou subdomínio que você controla, por exemplo `finance.seudominio.com.br`.
 - Instância Ubuntu 24.04 LTS com **4 GB de RAM recomendados**, porque a compilação acontece na própria máquina. Confira o preço mensal na AWS antes de criar.
-- O aplicativo usa contas individuais em SQLite; a senha extra do Caddy continua protegendo externamente o acesso. Consulte [a configuração atual de domínio e banco](DOMINIO.md), inclusive `APP_ORIGIN`, antes de atualizar um deploy anterior.
+- O aplicativo usa contas individuais em SQLite; o login próprio protege os dados e a API; a proteção externa do Caddy foi retirada para a integração mobile. Consulte [a configuração atual de domínio e banco](DOMINIO.md), inclusive `APP_ORIGIN`, antes de atualizar um deploy anterior.
 - Contas e planejamentos ficam no volume persistente `api_data`. Para trazer dados antigos de outro endereço, exporte o JSON e importe na configuração inicial da conta. Nunca use `down -v` em um ambiente com dados que deseja preservar.
 
 ## 1. Criar a máquina no Lightsail
@@ -53,15 +53,7 @@ Se `docker-compose-v2` não estiver disponível na imagem escolhida, siga a inst
 
 Não precisa instalar Node, npm ou Python na máquina: eles estão nas imagens Docker.
 
-## 4. Criar a senha externa e configurar o domínio
-
-Gere o hash de uma senha forte, diferente do login demonstrativo do app:
-
-```bash
-sudo docker run --rm -it caddy:2-alpine caddy hash-password
-```
-
-Digite a senha quando o comando pedir. Guarde a senha para abrir o site e copie **apenas o hash gerado** para a configuração abaixo. Não coloque a senha original no GitHub ou no chat.
+## 4. Configurar o domínio
 
 ```bash
 cp deploy/.env.example deploy/.env
@@ -69,17 +61,14 @@ chmod 600 deploy/.env
 nano deploy/.env
 ```
 
-Preencha as três linhas com seus valores:
+Preencha:
 
 ```dotenv
 APP_DOMAIN=finance.seudominio.com.br
-BASIC_AUTH_USER=admin
-BASIC_AUTH_HASH='COLE_AQUI_O_HASH_GERADO_PELO_CADDY'
+APP_ORIGIN=https://finance.seudominio.com.br
 ```
 
-Use apenas o nome do domínio em `APP_DOMAIN`, sem `https://` e sem barra no final. **Mantenha as aspas simples ao redor do hash**, pois ele contém caracteres `$`. No nano, `Ctrl+O`, Enter salva; `Ctrl+X` sai.
-
-O arquivo real `deploy/.env` é ignorado pelo Git e pelo contexto do Docker. Não use `docker compose config` sem `--quiet` ao compartilhar logs, pois esse comando pode exibir configurações de acesso.
+Use somente o nome do domínio em APP_DOMAIN e a origem HTTPS em APP_ORIGIN, sem /admin. O login próprio do FinanceMed substitui a janela externa de senha do Caddy; as variáveis BASIC_AUTH antigas não são mais utilizadas. No Nano, Ctrl+O e Enter salvam, Ctrl+X sai.
 
 ## 5. Compilar e iniciar
 
@@ -94,12 +83,12 @@ sudo docker compose --env-file deploy/.env -f deploy/compose.prod.yml ps
 
 A primeira compilação pode demorar. API, interface e Caddy devem ficar `healthy`.
 
-Abra **https://finance.seudominio.com.br** no navegador. Primeiro ele pedirá o usuário `admin` e a senha forte do passo 4. Depois aparece o login do FinanceMed: crie sua conta individual.
+Abra **https://finance.seudominio.com.br** no navegador. Crie sua conta individual pelo login do FinanceMed.
 
-Para conferir pelo SSH, substitua o domínio e digite a senha externa quando o curl pedir:
+Para conferir pelo SSH, substitua o domínio:
 
 ```bash
-curl --fail --user admin https://finance.seudominio.com.br/api/health
+curl --fail https://finance.seudominio.com.br/api/health
 ```
 
 O resultado esperado contém `"status":"ok"`. Faça também um teste funcional: entre no app, cadastre informações fictícias e execute o otimizador. Apenas uma porta aberta não valida o cálculo.
@@ -170,8 +159,8 @@ sudo docker compose --env-file deploy/.env -f deploy/compose.prod.yml logs --tai
 
 - **Não abre o domínio:** confira o registro A, IP estático e portas 80/443.
 - **Não emite certificado:** confira a propagação do DNS e os logs do Caddy. Não desative a verificação HTTPS para contornar o problema.
-- **Caddy falha ao iniciar:** confira domínio, usuário e hash no `.env`; o hash precisa manter os `$` e as aspas simples no arquivo.
-- **401:** o usuário ou a senha externa não foram enviados ou estão incorretos. Essa senha é diferente da senha da conta individual.
+- **Caddy falha ao iniciar:** confira APP_DOMAIN, DNS e os logs do Caddy.
+- **401 na API:** é necessário entrar na conta do FinanceMed. Se ainda aparecer uma janela de senha do navegador, o Caddy em execução ainda está na configuração antiga.
 - **Erro no otimizador:** confira `web` e `api`; `API_URL` deve continuar `http://api:8000` dentro dos contêineres.
 - **Atualização rejeitada por alterações locais:** preserve/revise o que mudou antes de continuar. `.env` é ignorado e não exige commit.
 - **Compilação encerrada por falta de memória:** aumente a RAM da instância antes de repetir a compilação.
@@ -184,8 +173,7 @@ Faça snapshots do Lightsail antes de mudanças importantes e guarde, de forma s
 - [IP estático no Lightsail](https://docs.aws.amazon.com/lightsail/latest/userguide/lightsail-create-static-ip.html)
 - [Instalar Docker no Ubuntu](https://docs.docker.com/engine/install/ubuntu/)
 - [HTTPS automático do Caddy](https://caddyserver.com/docs/automatic-https)
-- [Autenticação básica no Caddy](https://caddyserver.com/docs/caddyfile/directives/basic_auth)
 
-## O que foi validado nesta entrega
+## Validação e limites
 
-As três imagens Docker foram compiladas. Em um teste local isolado, API, interface e Caddy ficaram saudáveis; requisições sem senha retornaram 401, requisições autenticadas à interface e à saúde retornaram 200, e o otimizador calculou três alternativas pela rota de produção. A sintaxe do script de atualização e a configuração Compose foram verificadas. A criação de recursos na sua conta AWS, a instalação do Ubuntu, a configuração do DNS e a emissão pública do certificado HTTPS ainda dependem da execução deste guia.
+A interface web e a interface mobile empacotada são compiladas separadamente. A API tem testes de permissões e isolamento por conta; os fluxos web têm testes de navegador. A ponte nativa tem testes simulados que não substituem execução em aparelhos. Consulte MOBILE.md. Este guia não executa ações na conta AWS nem confirma DNS/certificados da instalação do leitor.

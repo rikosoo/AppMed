@@ -1,0 +1,91 @@
+# FinanceMed AI — Android e iOS (etapa 3)
+
+A interface é compilada pelo Vite e empacotada nos projetos Capacitor. Não utiliza `server.url`, iframe ou carregamento remoto da interface. O backend Next/FastAPI continua na EC2; o aplicativo chama os mesmos endpoints por HTTPS pelo transporte HTTP nativo do Capacitor, com cookies de sessão. Não há senha, token ou credencial embutidos no pacote. Uma conta criada no site usa os mesmos dados no aplicativo; é necessário entrar em cada dispositivo.
+
+## Preparar
+
+Na raiz do repositório, com Node.js 22.12 ou superior:
+
+```bash
+npm ci
+npm run mobile:sync
+```
+
+O comando compila a interface e sincroniza os plugins/assets nos dois projetos. Depois de alterar código da interface ou dependências, execute-o novamente. Não é necessário instalar Python no computador só para compilar o aplicativo: ele usa a API da EC2.
+
+A origem padrão é `https://app.75hard.club`. Para trocar antes de compilar, no PowerShell:
+
+```powershell
+$env:FINANCEMED_API_ORIGIN="https://novo.seudominio.com"
+npm run mobile:sync
+```
+
+No Linux/macOS:
+
+```bash
+FINANCEMED_API_ORIGIN=https://novo.seudominio.com npm run mobile:sync
+```
+
+Use somente a origem HTTPS, sem `/admin`, credenciais ou parâmetros. Essa variável é de compilação, não vai no `deploy/.env` da EC2. Para trocar de domínio depois da distribuição é preciso gerar e distribuir uma nova versão; preserve o endereço antigo durante a transição. O ID provisório dos projetos é `club.hard75.financemed`; confirme o identificador antes da primeira publicação, pois trocar após publicar cria outro aplicativo.
+
+## Atualizar o servidor antes de testar
+
+A proteção externa Basic Auth foi retirada do Caddy: a janela de usuário/senha do navegador não funciona no transporte nativo. O login próprio do FinanceMed continua obrigatório para dados, cálculos e administração; o cadastro está disponível publicamente. As variáveis BASIC_AUTH antigas podem permanecer no `.env`, mas deixam de ser utilizadas. Não inclua essas credenciais no aplicativo.
+
+No SSH da EC2, após o commit estar disponível:
+
+```bash
+cd ~/AppMed
+git pull --ff-only origin main
+sudo docker compose --env-file deploy/.env -f deploy/compose.prod.yml build
+sudo docker compose --env-file deploy/.env -f deploy/compose.prod.yml up -d --wait --wait-timeout 180
+```
+
+Mantenha uma única linha para cada variável:
+
+```env
+APP_DOMAIN=app.75hard.club
+APP_ORIGIN=https://app.75hard.club
+```
+
+Não coloque `APP_DOMAIN=:80`. Certificado válido é obrigatório, sem exceções TLS ou HTTP liberado. Não precisa abrir portas adicionais. Não alteramos CORS para aceitar qualquer origem; as chamadas web continuam no próprio domínio e as chamadas nativas usam a API autenticada.
+
+## Android no Windows, Linux ou macOS
+
+Instale Android Studio, SDK Android 36 e JDK 21 (pode usar o JDK compatível do Android Studio). Depois:
+
+```bash
+npm run mobile:android
+```
+
+O Android Studio abre `apps/mobile/android`. Aguarde a sincronização do Gradle, selecione um emulador ou celular com depuração USB e clique em Run. Para um APK de teste, use **Build → Generate App Bundles or APKs → Generate APKs** (o texto varia por versão). O APK debug fica em `apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk`.
+
+Para a Play Store será necessário gerar um **AAB de release assinado**, com chave protegida e incremento de versionCode; isso é parte das próximas etapas. Não envie chaves ou senhas ao GitHub.
+
+## iOS no Mac
+
+É necessário macOS, Xcode compatível com Capacitor 8 e SDK iOS instalado. O projeto usa Swift Package Manager, sem instalação de CocoaPods.
+
+```bash
+npm run mobile:ios
+```
+
+No Xcode, selecione o time em Signing & Capabilities e escolha simulador/iPhone. Execute Run. A publicação exige conta Apple Developer e um Archive assinado; gerar o projeto no Linux não gera IPA nem valida sua compilação no Xcode.
+
+## Funcionalidades nativas preparadas
+
+- Interface local, cinco telas e assistente de configuração compartilhados com a web.
+- HTTP nativo para login e dados; mantém a sessão por cookie, sem tokens no localStorage.
+- Áreas seguras, aviso de conexão, retomada do aplicativo e botão Voltar no Android.
+- Exportação JSON abre a folha nativa de compartilhamento. O arquivo fica em cache privado do aplicativo; ao compartilhá-lo, o usuário escolhe seu destino. Não concedemos acesso geral ao armazenamento externo. A importação continua pelo seletor de arquivo do sistema.
+- Links HTTPS externos, incluindo o painel administrativo, abrem o navegador do sistema. O navegador tem sessão independente: talvez seja necessário entrar novamente.
+- Backup automático Android desativado; tráfego HTTP e conteúdo misto desativados.
+- Manifesto de privacidade iOS para o acesso a arquivos do plugin Filesystem, incorporado aos recursos do target.
+
+Sem rede, a interface abre e mostra o estado de conexão, mas entrar e carregar dados do servidor exigem internet. Não prometemos funcionamento financeiro completo offline. Alterações ainda não confirmadas continuam no mecanismo existente de cópia pendente por conta.
+
+## Verificação antes da distribuição
+
+A compilação da interface e os testes com ponte nativa simulada não substituem testes em aparelhos. Verificar nos dois sistemas: cadastro/login, persistência da sessão após fechar/reabrir, logout, separação de contas, conexão interrompida, importação/exportação, teclado, áreas seguras, botão Voltar e links externos. O comportamento real do cookie nativo deve ser validado no Android/iPhone com o servidor HTTPS atualizado.
+
+Esta etapa não publica nas lojas. Antes disso ainda precisamos de ícones/splash finais (os projetos usam os recursos iniciais do Capacitor), política de privacidade e suporte públicos, exclusão de conta, declarações de dados das lojas, builds assinados e testes em aparelhos. O manifesto de APIs do iOS não substitui as declarações de dados no App Store Connect. A aprovação depende da avaliação de cada loja.

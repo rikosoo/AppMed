@@ -1,4 +1,5 @@
 'use client';
+import { apiFetch } from '@/lib/api-client';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { validStore, type Store } from './model';
 function fingerprint(value:unknown):string{
@@ -14,7 +15,7 @@ export function usePlanStore(userId:string){
  const load=useCallback(async(ignorePending=false)=>{
   const requestId=++generation.current;setError('');blocked.current=true;if(ignorePending)pending.current=null;
   try{
-   const response=await fetch('/api/plan',{cache:'no-store',headers:{'X-FinanceMed-Account':userId}});const data=await response.json();if(!response.ok)throw Error(data.detail||'Não foi possível carregar seus dados.');if(!validStore(data.store))throw Error('O servidor retornou um planejamento inválido.');
+   const response=await apiFetch('/api/plan',{cache:'no-store',headers:{'X-FinanceMed-Account':userId}});const data=await response.json();if(!response.ok)throw Error(data.detail||'Não foi possível carregar seus dados.');if(!validStore(data.store))throw Error('O servidor retornou um planejamento inválido.');
    if(!active.current||requestId!==generation.current)return;
    blocked.current=false;
    revision.current=data.revision;saved.current=fingerprint(data.store);let selected=data.store;
@@ -38,7 +39,7 @@ export function usePlanStore(userId:string){
    while(pending.current&&active.current&&!blocked.current){
     const next=pending.current;pending.current=null;setStatus('Salvando no servidor…');
     try{
-     const response=await fetch('/api/plan',{method:'PUT',headers:{'Content-Type':'application/json','X-FinanceMed-Account':userId},body:JSON.stringify({store:next,revision:revision.current})});const data=await response.json();
+     const response=await apiFetch('/api/plan',{method:'PUT',headers:{'Content-Type':'application/json','X-FinanceMed-Account':userId},body:JSON.stringify({store:next,revision:revision.current})});const data=await response.json();
      if(!response.ok){if(response.status===409)blocked.current=true;throw Error(data.detail||'Não foi possível salvar seus dados.');}
      revision.current=data.revision;saved.current=fingerprint(next);
      if(active.current){

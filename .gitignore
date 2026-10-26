@@ -14,3 +14,21 @@ services/api/data/
 *.sqlite3-wal
 *.sqlite3-shm
 backups/
+
+# Native build products and machine-specific signing/SDK configuration
+apps/mobile/dist/
+apps/mobile/android/.gradle/
+apps/mobile/android/.idea/
+apps/mobile/android/local.properties
+apps/mobile/android/**/build/
+apps/mobile/android/app/src/main/assets/public/
+apps/mobile/android/app/src/main/assets/capacitor.config.json
+apps/mobile/android/app/src/main/assets/capacitor.plugins.json
+apps/mobile/ios/App/App/public/
+apps/mobile/ios/App/App/capacitor.config.json
+apps/mobile/ios/**/xcuserdata/
+apps/mobile/ios/**/DerivedData/
+*.jks
+*.keystore
+*.p12
+*.mobileprovision
