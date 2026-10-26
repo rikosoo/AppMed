@@ -66,7 +66,7 @@ class Expense(BaseModel):
     cents:int=Field(strict=True,ge=0,le=1_000_000_000)
 
 class StoredWork(Work):
-    # Preserve readable legacy history. The optimizer still enforces 280h.
+    # Preserve readable legacy history. The optimizer still enforces 360h.
     minutes:int=Field(strict=True,ge=1,le=43200)
 
 class MonthlyPlan(BaseModel):

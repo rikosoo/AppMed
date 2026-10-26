@@ -92,6 +92,6 @@ Esta etapa não publica nas lojas. Antes disso ainda precisamos de ícones/splas
 
 ## Horas por unidade
 
-O campo de trabalho usa **horas.minutos**, com ponto ou vírgula: `0.3`, `0,3`, `0.30` e `0,30` significam 30 minutos; `1,30` significa 1h30; `0,05` significa 5 minutos. Minutos vão de 00 a 59 e o limite é 280h. A confirmação ao lado do campo mostra o tempo interpretado. Isso se aplica às horas por unidade, não altera a unidade dos outros campos e não reinterpreta os trabalhos já salvos: o banco continua guardando minutos inteiros.
+O campo de trabalho usa **horas.minutos**, com ponto ou vírgula: `0.3`, `0,3`, `0.30` e `0,30` significam 30 minutos; `1,30` significa 1h30; `0,05` significa 5 minutos. Minutos vão de 00 a 59 e o limite é 360h. A confirmação ao lado do campo mostra o tempo interpretado. Isso se aplica às horas por unidade, não altera a unidade dos outros campos e não reinterpreta os trabalhos já salvos: o banco continua guardando minutos inteiros.
 
 No primeiro teste em Android, entre com sua conta, cadastre uma atividade de `0.3`, conclua o planejamento e reabra a edição: o campo deve mostrar `0,30`. Edite para `1,30`, salve, feche/reabra o aplicativo e confirme o valor. Teste também o botão Voltar, a exportação JSON e a retomada após desconectar/reconectar a rede. Se houver falha de compilação, copie o primeiro erro da aba Build; se abrir mas o login falhar, informe a mensagem exibida no aplicativo.

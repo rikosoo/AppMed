@@ -100,15 +100,15 @@ Os estilos responsivos em `apps/web/app/responsive.css` partem de uma coluna e n
 
 ## Teto de horas e alternativas para completar a meta
 
-A disponibilidade mensal é limitada a 280 horas na interface e na API. As três opções principais continuam dentro da disponibilidade e dos limites de unidades informados.
+A disponibilidade mensal é limitada a 360 horas na interface e na API. As três opções principais continuam dentro da disponibilidade e dos limites de unidades informados.
 
-Quando a meta não é viável nesses limites, a seção ampliada apresenta **até três combinações para cobrir apenas o valor que falta**, sem preencher desnecessariamente 280h. A primeira opção encontra o menor tempo adicional necessário por programação dinâmica exata em minutos. As alternativas fixam uma ou duas unidades de outra atividade habilitada e resolvem o restante com o mesmo algoritmo; não representam as três melhores soluções globais nem garantem variedade quando só existe uma atividade viável.
+Quando a meta não é viável nesses limites, a seção ampliada apresenta **até três combinações para cobrir apenas o valor que falta**, sem preencher desnecessariamente 360h. A primeira opção encontra o menor tempo adicional necessário por programação dinâmica exata em minutos. As alternativas fixam uma ou duas unidades de outra atividade habilitada e resolvem o restante com o mesmo algoritmo; não representam as três melhores soluções globais nem garantem variedade quando só existe uma atividade viável.
 
-O critério principal é atingir a meta com menos horas. Unidades são inteiras, então pode sobrar algum valor financeiro. Cada cartão mostra renda incremental, composição por trabalho, horas adicionais necessárias, horas além da disponibilidade (0h quando couber) e tempo total do mês. A soma dos trabalhos previstos e adicionais nunca excede 280h. Se a meta for impossível até esse teto, são exibidas alternativas parciais com a diferença restante.
+O critério principal é atingir a meta com menos horas. Unidades são inteiras, então pode sobrar algum valor financeiro. Cada cartão mostra renda incremental, composição por trabalho, horas adicionais necessárias, horas além da disponibilidade (0h quando couber) e tempo total do mês. A soma dos trabalhos previstos e adicionais nunca excede 360h. Se a meta for impossível até esse teto, são exibidas alternativas parciais com a diferença restante.
 
 Somente nas alternativas ampliadas, limites positivos de unidades podem ser ultrapassados; limite zero continua excluindo a atividade. Os detalhes de limites ficam recolhidos em cada cartão para priorizar a combinação e o tempo necessário. Nada é aplicado ou salvo automaticamente, e os cadastros permanecem inalterados. Confirme demanda e viabilidade da rotina antes de assumir novas atividades.
 
-O motor usa centavos e minutos inteiros. Testes verificam o menor tempo contra busca exaustiva independente, metas inviáveis, exclusões, histórico e layouts de 320 a 1440px. Cadastros históricos acima de 280h não são apagados: a disponibilidade precisa ser corrigida antes de otimizar ou reutilizar o mês.
+O motor usa centavos e minutos inteiros. Testes verificam o menor tempo contra busca exaustiva independente, metas inviáveis, exclusões, histórico e layouts de 320 a 1440px. Cadastros históricos acima de 360h não são apagados: a disponibilidade precisa ser corrigida antes de otimizar ou reutilizar o mês.
 
 ## Publicar na AWS
 

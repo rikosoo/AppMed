@@ -26,7 +26,7 @@ test('hours.minutes entry persists real minutes through onboarding, editing and 
  const field=page.getByLabel('Horas / unidade');await expect(field).toHaveValue('0,30');
  await field.fill('0,75');await page.getByRole('button',{name:'Salvar trabalho'}).click();
  await expect(page.getByRole('dialog')).toBeVisible();expect(await field.evaluate((input:HTMLInputElement)=>input.checkValidity())).toBeFalsy();
- await field.fill('280.01');expect(await field.evaluate((input:HTMLInputElement)=>input.checkValidity())).toBeFalsy();
+ await field.fill('360.01');expect(await field.evaluate((input:HTMLInputElement)=>input.checkValidity())).toBeFalsy();
  await field.fill('1,30');await expect(page.locator('.work-duration-hint strong')).toHaveText('1h30');
  await page.getByRole('button',{name:'Salvar trabalho'}).click();await expect.poll(savedMinutes).toBe(90);
  await page.reload();await page.getByRole('navigation',{name:test.info().project.name==='mobile'?'Navegação móvel':'Menu principal'}).getByRole('button',{name:'Trabalhos',exact:true}).click();

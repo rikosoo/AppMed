@@ -159,29 +159,29 @@ def test_screenshot_overtime_explores_capacity_beyond_unit_limits():
     assert warning['unit_limit_excess'][0]['configured_max'] == 9
 
 
-def test_overtime_stops_at_280_total_hours_including_existing_work():
-    result = optimize([work('c',50000,60,270,100)],0,14500000,275*60)
+def test_overtime_stops_at_360_total_hours_including_existing_work():
+    result = optimize([work('c',50000,60,350,100)],0,18500000,355*60)
     warning = result['overtime_scenario']
     assert warning['counts'] == [10]
-    assert warning['total_minutes'] == 280*60
-    assert warning['hard_limit_minutes'] == 280*60
+    assert warning['total_minutes'] == 360*60
+    assert warning['hard_limit_minutes'] == 360*60
     assert not warning['reaches_target']
     assert warning['shortfall_cents'] == 500000
-    assert optimize([work('c',50000,60,281,100)],0,99999999,280*60)['overtime_scenario'] is None
+    assert optimize([work('c',50000,60,361,100)],0,99999999,360*60)['overtime_scenario'] is None
 
 
 def test_no_overtime_without_room_or_without_additional_units():
     assert optimize([work(extra=0)],0,999999,60)['overtime_scenario'] is None
-    assert optimize([work(extra=100)],0,999999999,280*60)['overtime_scenario']['total_minutes'] == 280*60
+    assert optimize([work(extra=100)],0,999999999,360*60)['overtime_scenario']['total_minutes'] == 360*60
 
 
-def test_api_and_engine_reject_more_than_280_available_hours():
+def test_api_and_engine_reject_more_than_360_available_hours():
     import pytest
-    payload = dict(works=[work()],expenses_cents=0,target_cents=500000,available_minutes=280*60+1)
+    payload = dict(works=[work()],expenses_cents=0,target_cents=500000,available_minutes=360*60+1)
     assert client.post('/api/optimizer',json=payload).status_code == 422
-    with pytest.raises(ValueError,match='280'):
-        optimize([work()],0,500000,280*60+1)
-    payload['available_minutes'] = 280*60
+    with pytest.raises(ValueError,match='360'):
+        optimize([work()],0,500000,360*60+1)
+    payload['available_minutes'] = 360*60
     assert client.post('/api/optimizer',json=payload).status_code == 200
 
 
@@ -194,12 +194,12 @@ def test_large_optional_search_does_not_block_regular_results():
 
 def test_dynamic_programming_beats_greedy_income_per_minute():
     # 12 minutes remain: 2 x (6min, 10 cents) beats greedy 2 x (5min, 9 cents).
-    works = [work('base',1,16800-12,1,0),work('a',10,6,0,1),work('b',9,5,0,1)]
-    result = optimize(works,0,999999,16800-11)
+    works = [work('base',1,21600-12,1,0),work('a',10,6,0,1),work('b',9,5,0,1)]
+    result = optimize(works,0,999999,21600-11)
     warning = result['overtime_scenario']
     assert warning['counts'] == [0,2,0]
     assert warning['extra_cents'] == 20
-    assert warning['total_minutes'] == 16800
+    assert warning['total_minutes'] == 21600
     assert warning['unit_limit_excess'][0]['configured_max'] == 1
 
 
@@ -211,37 +211,37 @@ def test_dynamic_programming_matches_an_independent_small_exhaustive_oracle():
         capacity = rng.randint(3,24)
         durations = [rng.randint(1,9),rng.randint(1,9)]
         incomes = [rng.randint(1,30),rng.randint(1,30)]
-        works = [work('base',1,16800-capacity,1,0),work('a',incomes[0],durations[0],0,1),work('b',incomes[1],durations[1],0,1)]
+        works = [work('base',1,21600-capacity,1,0),work('a',incomes[0],durations[0],0,1),work('b',incomes[1],durations[1],0,1)]
         expected = max((a*incomes[0]+b*incomes[1],-(a*durations[0]+b*durations[1]))
                        for a,b in product(range(capacity+1),repeat=2)
                        if a*durations[0]+b*durations[1]<=capacity)
-        result = optimize(works,0,999999,16800-capacity)
+        result = optimize(works,0,999999,21600-capacity)
         warning = result['overtime_scenario']
         if expected[0]==0:
             assert warning is None
         else:
             assert warning['extra_cents'] == expected[0]
             assert warning['minutes'] == -expected[1]
-            assert warning['total_minutes'] <= 16800
+            assert warning['total_minutes'] <= 21600
             assert sum(n*w['minutes'] for n,w in zip(warning['counts'],works)) == warning['minutes']
             assert sum(n*w['net_cents'] for n,w in zip(warning['counts'],works)) == warning['extra_cents']
 
 
 def test_capacity_leftover_is_reported_and_disabled_activities_stay_excluded():
-    works = [work('base',1,16800-10,1,0),work('active',100,7,0,1),work('disabled',99999,1,0,0)]
-    warning = optimize(works,0,9999999,16800-10)['overtime_scenario']
+    works = [work('base',1,21600-10,1,0),work('active',100,7,0,1),work('disabled',99999,1,0,0)]
+    warning = optimize(works,0,9999999,21600-10)['overtime_scenario']
     assert warning['counts'] == [0,1,0]
     assert warning['unused_capacity_minutes'] == 3
-    assert warning['total_minutes'] == 16800-3
+    assert warning['total_minutes'] == 21600-3
     assert warning['extra_cents'] == 100
 
 
 def test_cap_projection_can_relax_units_without_exceeding_hours():
-    warning = optimize([work('c',50000,60,0,9)],0,999999999,16800)['overtime_scenario']
+    warning = optimize([work('c',50000,60,0,9)],0,999999999,21600)['overtime_scenario']
     assert not warning['exceeds_availability']
     assert warning['excess_minutes'] == 0
-    assert warning['unit_limit_excess'][0]['simulated_quantity'] == 280
-    assert warning['counts'] == [280]
+    assert warning['unit_limit_excess'][0]['simulated_quantity'] == 360
+    assert warning['counts'] == [360]
 
 
 def test_target_solutions_stop_when_reaching_gap_and_offer_three_mixes():
@@ -253,7 +253,7 @@ def test_target_solutions_stop_when_reaching_gap_and_offer_three_mixes():
     for row in rows:
         assert row['reaches_target']
         assert row['excess_minutes'] == 0
-        assert row['total_minutes'] < 280*60
+        assert row['total_minutes'] < 360*60
         assert row['unit_limit_excess']
     assert result['overtime_scenario']==rows[0]
 
@@ -273,8 +273,8 @@ def test_minimum_time_solution_matches_exhaustive_oracle_for_reachable_targets()
         reachable=[t for t,money in combinations if money>=gap]
         if not reachable:
             continue
-        works=[work('base',1,16800-capacity,1,0),work('a',incomes[0],durations[0],0,1),work('b',incomes[1],durations[1],0,1)]
-        result=optimize(works,0,gap+1,16800-capacity)
+        works=[work('base',1,21600-capacity,1,0),work('a',incomes[0],durations[0],0,1),work('b',incomes[1],durations[1],0,1)]
+        result=optimize(works,0,gap+1,21600-capacity)
         first=result['overtime_scenarios'][0]
         assert first['reaches_target']
         assert first['minutes']==min(reachable)

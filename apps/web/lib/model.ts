@@ -2,7 +2,7 @@ import { afterTax, type TaxRegime } from './finance';
 export type Work = { gross_cents?: number; tax_regime?: TaxRegime; id: string; name: string; type: string; net_cents: number; minutes: number; quantity: number; max_extra: number };
 export type Expense = { id: string; name: string; category: string; cents: number };
 export type ScenarioItem = { work_id: string; name: string; quantity: number; extra_cents: number; minutes: number };
-export const MAX_MONTHLY_HOURS = 280;
+export const MAX_MONTHLY_HOURS = 360;
 export const MAX_MONTHLY_MINUTES = MAX_MONTHLY_HOURS * 60;
 export type Scenario = { unused_capacity_minutes?: number; unit_limit_excess?: { work_id: string; name: string; configured_max: number; simulated_quantity: number; excess_quantity: number }[]; algorithm?: string; objective?: string; exceeds_availability?: boolean; excess_minutes?: number; hard_limit_minutes?: number; items?: ScenarioItem[]; reaches_target?: boolean; shortfall_cents?: number; total_minutes?: number; counts: number[]; extra_cents: number; minutes: number; projected_cents: number; label: string };
 export type Result = { overtime_scenarios?: Scenario[]; overtime_scenario?: Scenario | null; overtime_note?: string | null; engine_version: string; status: string; scenarios: Scenario[]; maximum_extra_cents: number; remaining_minutes: number; gap_cents: number; best_partial?: Scenario };

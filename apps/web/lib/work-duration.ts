@@ -5,7 +5,7 @@ export function parseWorkDuration(value:string):number|null{
  const hours=Number(match[1]);
  const minutes=Number((match[2]||'').padEnd(2,'0'));
  const total=hours*60+minutes;
- return minutes<60&&total>=1&&total<=280*60?total:null;
+ return minutes<60&&total>=1&&total<=360*60?total:null;
 }
 export function formatWorkDuration(minutes:number):string{
  const whole=Math.floor(minutes/60),rest=minutes%60;

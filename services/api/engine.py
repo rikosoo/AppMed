@@ -3,8 +3,8 @@ from itertools import product
 from math import prod
 from fractions import Fraction
 
-ENGINE_VERSION = '1.6.0'
-MAX_MONTHLY_MINUTES = 280 * 60
+ENGINE_VERSION = '1.7.0'
+MAX_MONTHLY_MINUTES = 360 * 60
 
 
 def overtime_scenario(works, base_minutes, available_minutes, net, gap):
@@ -16,10 +16,10 @@ def overtime_scenario(works, base_minutes, available_minutes, net, gap):
     """
     room = MAX_MONTHLY_MINUTES-base_minutes
     if room <= 0 or gap <= 0:
-        return [], 'Não há espaço adicional até o teto de 280h, ou a meta já foi alcançada.'
+        return [], 'Não há espaço adicional até o teto de 360h, ou a meta já foi alcançada.'
     enabled = [(i,w) for i,w in enumerate(works) if w['max_extra']>0 and w['minutes']<=room]
     if not enabled:
-        return [], 'Nenhuma atividade habilitada cabe nas horas restantes até 280h. Limite zero mantém a atividade excluída.'
+        return [], 'Nenhuma atividade habilitada cabe nas horas restantes até 360h. Limite zero mantém a atividade excluída.'
 
     def solve(locked=None, quantity=0):
         forced_minutes = works[locked]['minutes']*quantity if locked is not None else 0
@@ -90,13 +90,13 @@ def overtime_scenario(works, base_minutes, available_minutes, net, gap):
     pool.sort(key=(lambda r:(r['minutes'],r['extra_cents']-gap)) if reached else (lambda r:(-r['extra_cents'],r['minutes'])))
     selected=pool[:3]
     for index,row in enumerate(selected):
-        row['label']=('Menor tempo para a meta' if index==0 else f'Mix alternativo {index}') if reached else ('Maior alcance até 280h' if index==0 else f'Alternativa parcial {index}')
-    return selected, None if reached else 'Mesmo ampliando as unidades, a meta não cabe em 280h. As alternativas exibidas são parciais e informam quanto ainda falta.'
+        row['label']=('Menor tempo para a meta' if index==0 else f'Mix alternativo {index}') if reached else ('Maior alcance até 360h' if index==0 else f'Alternativa parcial {index}')
+    return selected, None if reached else 'Mesmo ampliando as unidades, a meta não cabe em 360h. As alternativas exibidas são parciais e informam quanto ainda falta.'
 
 
 def optimize(works, expenses_cents, target_cents, available_minutes):
     if available_minutes > MAX_MONTHLY_MINUTES:
-        raise ValueError('A disponibilidade mensal não pode ultrapassar 280 horas.')
+        raise ValueError('A disponibilidade mensal não pode ultrapassar 360 horas.')
     base_income = sum(w['net_cents'] * w['quantity'] for w in works)
     base_minutes = sum(w['minutes'] * w['quantity'] for w in works)
     net = base_income - expenses_cents
