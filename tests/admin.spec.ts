@@ -37,3 +37,25 @@ test('admin searches and blocks users with confirmation at mobile widths',async(
   await expect(page.getByText('Nenhum usuário encontrado.')).toBeVisible();
  }finally{await other.close();}
 });
+
+test('admin charts filter daily history and remain accessible on small screens',async({page})=>{
+ await page.goto('/admin');await accountLogin(page);
+ const me=await (await page.request.get('/api/auth/me')).json();
+ execFileSync('.venv/bin/python',['services/api/manage_admin.py',me.user.username],{cwd:process.cwd()});
+ await page.reload();
+ const charts=page.getByRole('region',{name:'Gráficos administrativos'});
+ await expect(charts.getByRole('heading',{name:'Crescimento e atividade'})).toBeVisible();
+ await expect(charts.getByRole('img')).toHaveCount(2);
+ await expect(charts.getByRole('button',{name:'30 dias',exact:true})).toHaveAttribute('aria-pressed','true');
+ await charts.getByRole('button',{name:'7 dias',exact:true}).click();
+ await expect(charts.getByText('Últimos 7 dias de calendário UTC, incluindo hoje.')).toBeVisible();
+ const slider=charts.getByRole('slider',{name:'Selecionar dia: Novos usuários por dia'});
+ await expect(slider).toHaveAttribute('max','6');await slider.focus();await slider.press('Home');await expect(slider).toHaveValue('0');
+ const expected=new Date();expected.setUTCDate(expected.getUTCDate()-6);
+ await expect(slider).toHaveAttribute('aria-valuetext',new RegExp(expected.toISOString().slice(0,10)));
+ await charts.getByText('Ver dados em tabela',{exact:true}).first().click();
+ await expect(charts.getByRole('table',{name:'Dados: Novos usuários por dia'}).getByRole('row')).toHaveCount(8);
+ for(const width of [320,390,768,1440]){await page.setViewportSize({width,height:900});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();}
+ await charts.getByRole('button',{name:'30 dias',exact:true}).click();await expect(slider).toHaveAttribute('max','29');
+ await page.setViewportSize({width:390,height:844});await charts.screenshot({path:`/tmp/financemed-admin-charts-${test.info().project.name}.png`});
+});

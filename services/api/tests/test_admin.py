@@ -89,3 +89,39 @@ def test_admin_search_filters_block_and_revocation():
     with connect() as db:
         assert db.execute('SELECT COUNT(*) FROM admin_audit').fetchone()[0]==2
     assert admin.patch('/api/admin/users/missing/status',json={'status':'blocked'}).status_code==404
+
+
+def test_daily_history_distinct_activity_zero_days_and_utc_window(monkeypatch):
+    from datetime import datetime,timezone,timedelta
+    import admin
+    client=TestClient(app);uid=account(client,'manager')
+    alice=account(TestClient(app),'alice');bob=account(TestClient(app),'bob')
+    now=int(datetime(2026,10,26,12,tzinfo=timezone.utc).timestamp())
+    today=datetime.fromtimestamp(now,timezone.utc).date()
+    with connect() as db:
+        db.execute("UPDATE users SET role='admin',created_at=? WHERE id=?",(now-40*86400,uid))
+        db.execute('UPDATE users SET created_at=? WHERE id=?',(now-86400,alice))
+        db.execute('UPDATE users SET created_at=? WHERE id=?',(now,bob))
+        for user,offset,event,count in [(alice,40,'plan_saved',1),(alice,1,'plan_saved',1),(alice,0,'plan_saved',3),(alice,0,'optimizer_used',2),(bob,0,'optimizer_used',1),(bob,0,'onboarding_completed',1)]:
+            db.execute('INSERT INTO usage_daily VALUES (?,?,?,?)',(user,(today-timedelta(days=offset)).isoformat(),event,count))
+    monkeypatch.setattr(admin.time,'time',lambda:now)
+    data=client.get('/api/admin/metrics').json()
+    history=data['daily_history']
+    assert len(history)==30
+    assert history[0]=={'date':(today-timedelta(days=29)).isoformat(),'new_users':0,'active_users':0}
+    assert history[-2]=={'date':(today-timedelta(days=1)).isoformat(),'new_users':1,'active_users':1}
+    assert history[-1]=={'date':today.isoformat(),'new_users':1,'active_users':2}
+    assert all(set(day)=={'date','new_users','active_users'} for day in history)
+    assert sum(day['new_users'] for day in history)==2
+
+
+def test_daily_history_does_not_invent_activity_before_tracking():
+    from admin import record_event
+    client=TestClient(app);uid=account(client)
+    with connect() as db:db.execute("UPDATE users SET role='admin' WHERE id=?",(uid,))
+    history=client.get('/api/admin/metrics').json()['daily_history']
+    assert all(day['active_users'] is None for day in history)
+    with connect() as db:record_event(db,uid,'plan_saved')
+    history=client.get('/api/admin/metrics').json()['daily_history']
+    assert all(day['active_users'] is None for day in history[:-1])
+    assert history[-1]['active_users']==1

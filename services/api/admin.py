@@ -1,6 +1,6 @@
 """Server-authorized aggregate metrics. Never exposes financial plans or credentials."""
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends, Query, Response, HTTPException, Request
 from accounts import connect, require_user, check_origin
 from pydantic import BaseModel, ConfigDict
@@ -37,6 +37,18 @@ def metrics(response:Response,user=Depends(require_admin)):
             # Daily event aggregates use complete UTC calendar days, including today.
             start=datetime.fromtimestamp(now-(days-1)*86400,timezone.utc).strftime('%Y-%m-%d')
             result[f'events_{days}d']={r['event']:r['total'] for r in db.execute('SELECT event,SUM(count) total FROM usage_daily WHERE day>=? GROUP BY event',(start,))}
+        today=datetime.fromtimestamp(now,timezone.utc).date()
+        start=today-timedelta(days=29)
+        start_timestamp=int(datetime.combine(start,datetime.min.time(),tzinfo=timezone.utc).timestamp())
+        registrations={row['day']:row['total'] for row in db.execute(
+            "SELECT strftime('%Y-%m-%d',created_at,'unixepoch') day,COUNT(*) total FROM users WHERE created_at>=? AND created_at<=? GROUP BY day",(start_timestamp,now))}
+        activity={row['day']:row['total'] for row in db.execute(
+            "SELECT day,COUNT(DISTINCT user_id) total FROM usage_daily WHERE day>=? AND day<=? AND event IN ('plan_saved','optimizer_used') GROUP BY day",(start.isoformat(),today.isoformat()))}
+        result['daily_history']=[]
+        for offset in range(30):
+            day=(start+timedelta(days=offset)).isoformat()
+            tracked=result['tracking_since'] is not None and day>=result['tracking_since']
+            result['daily_history'].append({'date':day,'new_users':registrations.get(day,0),'active_users':activity.get(day,0) if tracked else None})
     response.headers['Cache-Control']='no-store'
     return result
 

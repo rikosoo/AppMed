@@ -34,3 +34,11 @@ São endpoints protegidos da API, encaminhados pelo Next; exigem sessão de admi
 Os eventos são agregados por usuário, tipo e dia UTC, sem nomes de trabalhos, valores financeiros, IP ou informações de dispositivo. Contagens de eventos usam os últimos 7/30 dias de calendário UTC incluindo hoje. `tracking_since` informa o primeiro dia com eventos; não há reconstrução de atividade anterior à implantação. O indicador de configuração concluída também começa nesta implantação. As datas de cadastro já existentes são preservadas.
 
 A migração acrescenta colunas/tabelas sem apagar contas ou planejamentos. SQLite em volume persistente atende esta instância única; antes de trocar banco ou escalar para múltiplos servidores, será necessário planejar a migração.
+
+## Gráficos
+
+O painel traz cadastros por dia, usuários ativos por dia e barras de uso das funcionalidades, com seleção de 7/30 dias. As séries usam dias de calendário UTC, incluindo hoje; os cartões de novos/ativos continuam usando janelas móveis de 7/30 × 24 horas. Por isso, os totais nos limites do período podem diferir.
+
+Ativos diários são usuários distintos com `plan_saved` ou `optimizer_used` naquele dia, sem duplicar quem usou várias funções. O gráfico mostra o pico diário, não soma usuários repetidos entre dias. Dias anteriores ao primeiro registro de uso ficam sem histórico, em vez de serem apresentados como atividade zero. Cadastros são calculados a partir da data de criação das contas existentes; exclusões de conta também removem seus registros da série.
+
+As barras de funcionalidades mostram execuções, incluindo salvamentos automáticos. É possível selecionar o dia no gráfico pelo mouse/toque ou controle de teclado e abrir os mesmos valores em tabela. Nenhuma série contém nome, identificador individual ou valor financeiro.
