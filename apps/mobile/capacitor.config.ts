@@ -4,9 +4,10 @@ const config:CapacitorConfig={
  appName:'FinanceMed AI',
  webDir:'dist',
  backgroundColor:'#f6f7f4',
+ loggingBehavior:'none',
  server:{cleartext:false},
  android:{allowMixedContent:false,webContentsDebuggingEnabled:false},
  ios:{contentInset:'never',scrollEnabled:true},
- plugins:{CapacitorHttp:{enabled:false}},
+ plugins:{CapacitorHttp:{enabled:false},SplashScreen:{launchShowDuration:1000,launchAutoHide:true,backgroundColor:'#f6f7f4',showSpinner:false}},
 };
 export default config;

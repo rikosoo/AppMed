@@ -7,9 +7,11 @@
     "android": "cap open android",
     "ios": "cap open ios",
     "build": "vite build",
-    "preview": "vite preview --host 127.0.0.1"
+    "preview": "vite preview --host 127.0.0.1",
+    "assets": "capacitor-assets generate --android --ios --iconBackgroundColor \"#123e35\" --iconBackgroundColorDark \"#123e35\" --splashBackgroundColor \"#f6f7f4\" --splashBackgroundColorDark \"#123e35\""
   },
   "devDependencies": {
+    "@capacitor/assets": "3.0.5",
     "@capacitor/cli": "8.5.3",
     "@vitejs/plugin-react": "5.2.0",
     "typescript": "5.9.3",
@@ -24,6 +26,7 @@
     "@capacitor/ios": "8.5.3",
     "@capacitor/network": "8.0.1",
     "@capacitor/share": "8.0.3",
+    "@capacitor/splash-screen": "8.0.2",
     "react": "19.3.1",
     "react-dom": "19.3.1"
   }

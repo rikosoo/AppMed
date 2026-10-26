@@ -119,3 +119,7 @@ Veja o passo a passo em [docs/AWS.md](docs/AWS.md). Os arquivos em `deploy/` ini
 A base Capacitor compartilha a interface com a web e a empacota localmente. Consulte [MOBILE.md](docs/MOBILE.md) para sincronizar, abrir no Android Studio/Xcode e testar. `npm run mobile:sync` gera os assets dos dois projetos. A publicação e os testes em aparelhos ainda são etapas separadas.
 
 O deploy agora usa somente o login próprio do FinanceMed; a janela externa de senha do Caddy foi retirada para permitir o transporte nativo de sessão. Atualize o servidor antes de testar os aplicativos.
+
+## Preparação para as lojas
+
+Consulte [STORE-READINESS.md](docs/STORE-READINESS.md) para ícones, abertura, privacidade, exclusão de conta e builds manuais no GitHub. As páginas `/privacidade`, `/suporte` e `/excluir-conta` são públicas. A exclusão com senha fica em Minha conta e revoga as sessões de todos os dispositivos. A etapa de assinatura e publicação ainda não foi executada.

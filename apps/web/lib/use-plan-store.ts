@@ -31,7 +31,7 @@ export function usePlanStore(userId:string){
    setStore(selected);setReady(true);setStatus(blocked.current?'Conflito ao salvar':'Salvo no servidor');
   }catch(e){if(active.current&&requestId===generation.current){setError(e instanceof Error?e.message:'Falha ao conectar ao servidor.');setStatus('Falha ao carregar');}}
  },[key,userId]);
- useEffect(()=>{active.current=true;void load();return()=>{active.current=false;generation.current++;pending.current=null;};},[load]);
+ useEffect(()=>{active.current=true;const deleted=(event:Event)=>{if((event as CustomEvent).detail===userId){active.current=false;generation.current++;pending.current=null;}};window.addEventListener('financemed:account-deleted',deleted);void load();return()=>{active.current=false;generation.current++;pending.current=null;window.removeEventListener('financemed:account-deleted',deleted);};},[load,userId]);
  const flush=useCallback(async()=>{
   if(running.current||blocked.current||!active.current)return;
   running.current=true;

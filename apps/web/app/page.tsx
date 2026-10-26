@@ -40,8 +40,8 @@ function Dashboard() {
  const notify=(s:string)=>setToast(s);
  const add=(kind:'work'|'expense', item:Work|Expense|null=null)=>{setEditing(item);setModal(kind);};
  const moveMonth=(delta:number)=>{const d=new Date(`${month}-15T12:00:00`);d.setMonth(d.getMonth()+delta);setMonth(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);setResult(null);setError('');};
- const exportLegacy=async()=>{try{await exportJson(recoveryRaw??'','financemed-dados-locais-antigos.json');}catch{notify('Não foi possível exportar. Tente novamente.');}};
- const exportData=async()=>{try{await exportJson(JSON.stringify(store,null,2),`financemed-${month}.json`);notify('Cópia dos seus dados exportada.');}catch{notify('Exportação não concluída. Tente novamente.');}};
+ const exportLegacy=async()=>{try{await exportJson(recoveryRaw??'','financemed-dados-locais-antigos.json',account.id);}catch{notify('Não foi possível exportar. Tente novamente.');}};
+ const exportData=async()=>{try{await exportJson(JSON.stringify(store,null,2),`financemed-${month}.json`,account.id);notify('Cópia dos seus dados exportada.');}catch{notify('Exportação não concluída. Tente novamente.');}};
  async function runOptimizer(){
   const requestedInput=inputSignature;setBusy(true);setError('');setResult(null);
   try {

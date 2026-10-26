@@ -12,7 +12,8 @@ import uuid
 from contextlib import contextmanager
 from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
+from account_cleanup import record_deletion, purge_account, enforce_deletions, prune_backups
 
 router = APIRouter(prefix='/api')
 COOKIE = 'financemed_session'
@@ -36,6 +37,7 @@ def connect():
     os.chmod(path,0o600)
     connection.row_factory=sqlite3.Row
     connection.execute('PRAGMA foreign_keys=ON')
+    connection.execute('PRAGMA secure_delete=ON')
     connection.execute('PRAGMA busy_timeout=10000')
     connection.execute('PRAGMA journal_mode=WAL')
     connection.executescript(SCHEMA)
@@ -56,6 +58,8 @@ def connect():
         subject_id TEXT, created_at INTEGER NOT NULL);
     ''')
     try:
+        prune_backups(path)
+        enforce_deletions(connection,path)
         with connection:
             yield connection
     finally:
@@ -180,3 +184,31 @@ def get_plan(response:Response,user=Depends(require_user)):
         row=db.execute('SELECT document,revision FROM plans WHERE user_id=?',(user['id'],)).fetchone()
     response.headers['Cache-Control']='no-store'
     return {'store':json.loads(row['document']) if row else {'version':1,'months':{}},'revision':row['revision'] if row else 0}
+
+
+class DeleteAccount(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+    password:str=Field(min_length=1,max_length=128)
+    confirmation:str=Field(min_length=1,max_length=20)
+
+@router.post('/auth/delete-account',status_code=204)
+def delete_account(data:DeleteAccount,request:Request,response:Response,user=Depends(require_user)):
+    check_auth_transport(request)
+    if data.confirmation!='EXCLUIR':
+        raise HTTPException(422,'Digite EXCLUIR para confirmar a exclusão permanente.')
+    now=int(time.time())
+    with connect() as db:
+        db.execute('BEGIN IMMEDIATE')
+        row=db.execute('SELECT username,password_hash FROM users WHERE id=?',(user['id'],)).fetchone()
+        if not row:raise HTTPException(401,'Sua sessão expirou. Entre novamente.')
+        db.execute('DELETE FROM login_failures WHERE attempted_at<?',(now-900,))
+        failures=db.execute('SELECT COUNT(*) FROM login_failures WHERE username=? AND attempted_at>?',(row['username'],now-900)).fetchone()[0]
+        if failures>=8:raise HTTPException(429,'Muitas tentativas. Aguarde 15 minutos.',headers={'Retry-After':'900'})
+        if not password_matches(data.password,row['password_hash']):
+            db.execute('INSERT INTO login_failures VALUES (?,?)',(row['username'],now));db.commit()
+            raise HTTPException(401,'Senha incorreta. Sua conta não foi excluída.')
+        # Persist deletion intent first; a crash cannot resurrect the account on the next request.
+        record_deletion(database_path(),user['id'])
+        purge_account(db,user['id'])
+    response.delete_cookie(COOKIE,path='/',secure=secure_cookie(),httponly=True,samesite='lax')
+    response.headers['Cache-Control']='no-store'

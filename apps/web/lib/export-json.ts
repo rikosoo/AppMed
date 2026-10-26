@@ -1,8 +1,8 @@
 import { Capacitor } from '@capacitor/core';
-export async function exportJson(text:string,filename:string){
+export async function exportJson(text:string,filename:string,accountId?:string){
  if(Capacitor.isNativePlatform()){
   const [{Filesystem,Directory,Encoding},{Share}]=await Promise.all([import('@capacitor/filesystem'),import('@capacitor/share')]);
-  const file=await Filesystem.writeFile({path:`financemed-exports/${filename}`,recursive:true,data:text,directory:Directory.Cache,encoding:Encoding.UTF8});
+  const file=await Filesystem.writeFile({path:`financemed-exports/${accountId?`${accountId}/`:''}${filename}`,recursive:true,data:text,directory:Directory.Cache,encoding:Encoding.UTF8});
   await Share.share({title:'Cópia do FinanceMed',files:[file.uri],dialogTitle:'Salvar ou compartilhar planejamento'});
   return;
  }

@@ -47,3 +47,5 @@ Ao trocar de domínio futuramente, ajuste DNS, `APP_DOMAIN` e `APP_ORIGIN`, e re
 `python: can't open file '/app/backup_db.py'` significa que o script não está na imagem em execução; esse comando **não criou backup**. Confira `git log -1 --oneline` e atualize/reconstrua os serviços conforme os passos acima. `git pull` sozinho não altera a imagem Docker. Não remova volumes para resolver isso. Se já houver dados reais e não houver backup recente, preserve um snapshot da instância/volume antes de trocar a imagem. Após atualizar, execute novamente `exec api python backup_db.py`.
 
 Na instalação de teste informada, o Elastic IP associado é `18.225.62.138`. O registro A `app` deve apontar para esse endereço público; `172.31.35.202` é privado e não permite acesso público pelo domínio.
+
+A exclusão de conta usa também `account-deletions.sqlite3` no mesmo volume. Preserve esse registro mais recente ao restaurar um backup, conforme [STORE-READINESS.md](STORE-READINESS.md). Backups locais gerados pelo projeto expiram em 30 dias; snapshots e cópias externos precisam da mesma política operacional.

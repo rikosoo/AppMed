@@ -88,7 +88,7 @@ Sem rede, a interface abre e mostra o estado de conexão, mas entrar e carregar 
 
 A compilação da interface e os testes com ponte nativa simulada não substituem testes em aparelhos. Verificar nos dois sistemas: cadastro/login, persistência da sessão após fechar/reabrir, logout, separação de contas, conexão interrompida, importação/exportação, teclado, áreas seguras, botão Voltar e links externos. O comportamento real do cookie nativo deve ser validado no Android/iPhone com o servidor HTTPS atualizado.
 
-Esta etapa não publica nas lojas. Antes disso ainda precisamos de ícones/splash finais (os projetos usam os recursos iniciais do Capacitor), política de privacidade e suporte públicos, exclusão de conta, declarações de dados das lojas, builds assinados e testes em aparelhos. O manifesto de APIs do iOS não substitui as declarações de dados no App Store Connect. A aprovação depende da avaliação de cada loja.
+Esta etapa não publica nas lojas. Ícones/splash, páginas públicas de privacidade/suporte e exclusão de conta já estão preparados. Ainda precisamos revisar as declarações das lojas, gerar builds assinados e testar em aparelhos. Consulte [STORE-READINESS.md](STORE-READINESS.md). O manifesto de APIs do iOS não substitui as declarações de dados no App Store Connect. A aprovação depende da avaliação de cada loja.
 
 ## Horas por unidade
 

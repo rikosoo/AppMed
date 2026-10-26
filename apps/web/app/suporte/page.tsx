@@ -1,0 +1,3 @@
+import type {Metadata} from 'next';
+export const metadata:Metadata={title:'Suporte • FinanceMed AI'};
+export default function Support(){return <main className="legal-page"><a href="/">← FinanceMed AI</a><h1>Contato Suporte</h1><p>Para ajuda com o FinanceMed AI, escreva para <a href="mailto:contact@dresslikeme.store">contact@dresslikeme.store</a>.</p><p>Descreva o que aconteceu e informe se está usando o site, Android ou iOS. Se possível, inclua a mensagem do erro. Não envie sua senha nem dados de pacientes.</p><nav><a href="/privacidade">Privacidade</a><a href="/excluir-conta">Excluir conta</a><a href="/">Voltar ao aplicativo</a></nav></main>;}

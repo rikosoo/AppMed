@@ -21,7 +21,8 @@
     "mobile:ios": "npm run ios -w apps/mobile",
     "test:native": "playwright test -c playwright.native.config.ts",
     "test:mobile-config": "node --test tests/mobile-config.test.cjs",
-    "test:duration": "node --experimental-strip-types --test tests/work-duration.test.mjs"
+    "test:duration": "node --experimental-strip-types --test tests/work-duration.test.mjs",
+    "mobile:assets": "npm run assets -w apps/mobile"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1"
