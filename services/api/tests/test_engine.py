@@ -68,7 +68,10 @@ def test_screenshot_limits_return_three_honest_partial_mixes():
     assert result['remaining_minutes'] == 116*60
     assert result['status'] == 'infeasible'
     assert result['maximum_extra_cents'] == 690000
-    assert [s['counts'] for s in result['scenarios']] == [[9,2],[9,1],[9,0]]
+    assert result['scenarios'][0]['counts'] == [9,2]
+    assert len(result['scenarios']) == 3
+    assert len({s['counts'][0] for s in result['scenarios']}) > 1
+    assert all(sum(n>0 for n in s['counts'])==2 for s in result['scenarios'])
     for s in result['scenarios']:
         assert not s['reaches_target']
         assert s['shortfall_cents'] == 5000000-s['projected_cents']
@@ -189,7 +192,7 @@ def test_large_optional_search_does_not_block_regular_results():
     result = optimize([work(str(i),minutes=1,extra=100) for i in range(6)],0,1000000,0)
     assert result['status'] == 'infeasible'
     assert result['overtime_scenario']['total_minutes'] == 36
-    assert result['overtime_scenario']['algorithm'] == 'target_minimum_minutes_dp_v1'
+    assert result['overtime_scenario']['algorithm'] == 'target_minimum_minutes_dp_v2'
 
 
 def test_dynamic_programming_beats_greedy_income_per_minute():
@@ -247,13 +250,17 @@ def test_cap_projection_can_relax_units_without_exceeding_hours():
 def test_target_solutions_stop_when_reaching_gap_and_offer_three_mixes():
     result=optimize([work('c',50000,60,10,9),work('p',120000,720,1,2)],0,5000000,138*60)
     rows=result['overtime_scenarios']
-    assert [r['counts'] for r in rows] == [[88,0],[86,1],[83,2]]
-    assert [r['minutes'] for r in rows] == [88*60,98*60,107*60]
-    assert [r['extra_cents'] for r in rows] == [4400000,4420000,4390000]
+    assert len(rows)==3
+    assert rows[0]['counts']==[88,0]
+    assert rows[0]['minutes']==88*60
+    assert rows[0]['excess_minutes']==0
+    assert len({r['counts'][0] for r in rows})==3
+    assert any(r['counts'][1]>=5 for r in rows[1:])
+    assert all(sum(n>0 for n in r['counts'])>=2 for r in rows[1:])
     for row in rows:
         assert row['reaches_target']
-        assert row['excess_minutes'] == 0
-        assert row['total_minutes'] < 360*60
+        assert row['excess_minutes'] == max(0,row['total_minutes']-138*60)
+        assert row['total_minutes'] <= 360*60
         assert row['unit_limit_excess']
     assert result['overtime_scenario']==rows[0]
 
@@ -288,3 +295,43 @@ def test_single_activity_returns_one_goal_option_without_filling_the_month():
     assert result['overtime_scenario']['counts']==[3]
     assert result['overtime_scenario']['minutes']==180
     assert result['overtime_scenario']['excess_minutes']==120
+
+
+def test_screenshot_three_jobs_receive_materially_different_regular_and_expanded_mixes():
+    works=[work('base',1000000,8700,1,0),work('c',38000,60,0,10),work('p',125000,720,0,4),work('t',9000,15,0,15)]
+    result=optimize(works,0,3500000,220*60)
+    regular=result['scenarios'];expanded=result['overtime_scenarios']
+    assert regular[0]['counts']==[0,10,4,15]
+    assert regular[0]['extra_cents']==1015000
+    assert len(regular)==len(expanded)==3
+    assert len({r['counts'][1] for r in regular})>1
+    assert len({r['counts'][2] for r in regular})>1
+    assert all(sum(n>0 for n in r['counts'])>=2 for r in regular)
+    assert expanded[0]['counts']==[0,66,0,0]
+    assert all(sum(n>0 for n in r['counts'])>=2 for r in expanded[1:])
+    assert any(sum(n>0 for n in r['counts'])==3 for r in expanded[1:])
+    assert any(r['counts'][2]>0 for r in expanded[1:])
+    assert all(r['counts'][1]<60 for r in expanded[1:])
+    for row in regular+expanded:
+        assert row['counts'][0]==0
+        assert row['extra_cents']==sum(n*w['net_cents'] for n,w in zip(row['counts'],works))
+        assert row['minutes']==sum(n*w['minutes'] for n,w in zip(row['counts'],works))
+        assert row['total_minutes']==8700+row['minutes']<=360*60
+    for row in regular:
+        assert row['total_minutes']<=220*60
+        assert all(n<=w['max_extra'] for n,w in zip(row['counts'],works))
+    for row in expanded:
+        assert row['reaches_target']
+        assert all(row['extra_cents']-w['net_cents']<result['gap_cents'] for n,w in zip(row['counts'],works) if n>0)
+    for row in expanded[1:]:
+        assert sum(n*w['net_cents']*5>=row['extra_cents'] for n,w in zip(row['counts'],works) if n>0)>=2
+
+
+def test_expanded_choices_do_not_add_redundant_low_value_units_for_variety():
+    result=optimize([work('clinic',38000,60,0,10),work('tele',9000,15,0,15)],0,2500000,220*60)
+    assert result['overtime_scenarios'][0]['counts']==[66,0]
+    assert all(row['counts'] not in [[66,1],[66,2]] for row in result['overtime_scenarios'])
+    for row in result['overtime_scenarios']:
+        assert row['reaches_target']
+        if row['counts'][0]:assert row['extra_cents']-38000<2500000
+        if row['counts'][1]:assert row['extra_cents']-9000<2500000
