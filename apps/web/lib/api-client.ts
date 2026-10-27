@@ -9,11 +9,11 @@ export async function apiFetch(path:string,options:RequestInit={}):Promise<Respo
  if(!path.startsWith('/api/')||path.includes('..')||path.includes('\\'))throw Error('Endereço da API inválido.');
  const headers=Object.fromEntries(new Headers(options.headers).entries());
  headers['Origin']=origin;
- options.signal?.throwIfAborted();
+ if(options.signal?.aborted)throw new DOMException('Operação cancelada.','AbortError');
  let data:unknown=options.body;
  if(typeof data==='string'&&new Headers(options.headers).get('content-type')?.includes('application/json'))data=JSON.parse(data);
  // Native HTTP maintains the server session cookie outside browser storage. Never save tokens in JS.
  const result=await CapacitorHttp.request({url:origin+path,method:options.method||'GET',headers,data,connectTimeout:15000,readTimeout:25000,responseType:'text',disableRedirects:true});
- options.signal?.throwIfAborted();
+ if(options.signal?.aborted)throw new DOMException('Operação cancelada.','AbortError');
  return new Response(result.status===204?null:typeof result.data==='string'?result.data:JSON.stringify(result.data),{status:result.status,headers:result.headers});
 }

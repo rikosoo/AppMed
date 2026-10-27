@@ -34,6 +34,7 @@ class Work(BaseModel):
         return self
 
 class OptimizationRequest(BaseModel):
+    preference:Literal['balanced','time','variety']='balanced'
     model_config = ConfigDict(extra='forbid')
     works: list[Work] = Field(max_length=6)
     expenses_cents: int = Field(strict=True, ge=0, le=1_000_000_000)
@@ -52,7 +53,7 @@ def optimizer(data: OptimizationRequest, user=Depends(require_user)):
         raise HTTPException(422, 'Cada trabalho deve ter um identificador único.')
     try:
         result = optimize([w.model_dump() for w in data.works], data.expenses_cents,
-                        data.target_cents, data.available_minutes)
+                        data.target_cents, data.available_minutes, data.preference)
         with connect() as db:
             record_event(db,user["id"],"optimizer_used")
         return result

@@ -2,11 +2,11 @@
 from itertools import product, combinations
 from math import prod
 
-ENGINE_VERSION = '1.8.0'
+ENGINE_VERSION = '1.9.0'
 MAX_MONTHLY_MINUTES = 360 * 60
 
 
-def select_diverse(pool, first, gap, works, limit=3):
+def select_diverse(pool, first, gap, works, preference='balanced', limit=3):
     """Keep the exact primary; select materially different, useful alternatives.
 
     Diversity uses integer normalized quantity distances. Partial alternatives
@@ -31,6 +31,10 @@ def select_diverse(pool, first, gap, works, limit=3):
         balanced=[row for row in candidates if sum(n*w['net_cents']*5>=row['extra_cents'] for n,w in zip(row['counts'],works) if n>0)>=2]
         if balanced:
             candidates=balanced
+        if preference!='time':
+            distinct=[row for row in candidates if all(sum(abs(a-b)>=threshold for a,b,threshold in zip(row['counts'],old['counts'],thresholds))>=2 for old in selected)]
+            if distinct:
+                candidates=distinct
         if not candidates:
             break
         covered=[any(row['counts'][i]>0 for row in selected) for i in range(len(references))]
@@ -41,6 +45,11 @@ def select_diverse(pool, first, gap, works, limit=3):
             changed=sum(sum(a!=b for a,b in zip(counts,old['counts'])) for old in selected)
             distance=min(sum(abs(a-b)*1000//reference for a,b,reference in zip(counts,old['counts'],references)) for old in selected)
             quality=(-row['minutes'],-row['extra_cents']) if row['extra_cents']>=gap else (row['extra_cents'],-row['minutes'])
+            concentration=max(n*w['net_cents'] for n,w in zip(counts,works))*1000//max(1,row['extra_cents'])
+            if preference=='time':
+                return (-row['minutes'], -row['extra_cents'] if row['extra_cents']>=gap else row['extra_cents'],novelty,material,changed,distance,tuple(counts))
+            if preference=='balanced':
+                return (novelty,-concentration,material,changed,distance,*quality,tuple(counts))
             return (novelty,material,changed,distance,sum(n>0 for n in counts),*quality,tuple(counts))
         row=max(candidates,key=score)
         selected.append(row)
@@ -48,7 +57,7 @@ def select_diverse(pool, first, gap, works, limit=3):
     return selected
 
 
-def overtime_scenario(works, base_minutes, available_minutes, net, gap):
+def overtime_scenario(works, base_minutes, available_minutes, net, gap, preference='balanced'):
     """Exact minimum-time primary, then bounded quota-based diverse mixes.
 
     Only hypothetical options relax positive unit limits; zero stays excluded.
@@ -139,7 +148,7 @@ def overtime_scenario(works, base_minutes, available_minutes, net, gap):
                 add({left:quota(left,a),right:quota(right,b)})
     reached=[row for row in candidates if row['reaches_target']]
     pool=reached or candidates
-    selected=select_diverse(pool,primary,gap,works)
+    selected=select_diverse(pool,primary,gap,works,preference)
     for index,row in enumerate(selected):
         types=sum(n>0 for n in row['counts'])
         row['label']=('Menor tempo para a meta' if reached else 'Maior alcance até 360h') if index==0 else (f'Mix alternativo {index} · {types} atividades' if types>1 else f'Alternativa {index} · 1 atividade')
@@ -147,7 +156,9 @@ def overtime_scenario(works, base_minutes, available_minutes, net, gap):
     return selected, None if reached else 'Mesmo ampliando as unidades, a meta não cabe em 360h. As alternativas exibidas são parciais e informam quanto ainda falta.'
 
 
-def optimize(works, expenses_cents, target_cents, available_minutes):
+def optimize(works, expenses_cents, target_cents, available_minutes, preference='balanced'):
+    if preference not in ('balanced','time','variety'):
+        raise ValueError('Selecione uma prioridade válida para os cenários.')
     if available_minutes > MAX_MONTHLY_MINUTES:
         raise ValueError('A disponibilidade mensal não pode ultrapassar 360 horas.')
     base_income = sum(w['net_cents'] * w['quantity'] for w in works)
@@ -155,10 +166,10 @@ def optimize(works, expenses_cents, target_cents, available_minutes):
     net = base_income - expenses_cents
     gap = max(0, target_cents - net)
     remaining = max(0, available_minutes - base_minutes)
-    common = dict(engine_version=ENGINE_VERSION, projected_cents=net, gap_cents=gap,
+    common = dict(preference=preference,engine_version=ENGINE_VERSION, projected_cents=net, gap_cents=gap,
                   committed_minutes=base_minutes, remaining_minutes=remaining)
     if base_minutes > available_minutes:
-        warning, note = overtime_scenario(works,base_minutes,available_minutes,net,gap)
+        warning, note = overtime_scenario(works,base_minutes,available_minutes,net,gap,preference)
         return dict(**common, status='over_capacity', scenarios=[], maximum_extra_cents=0, overtime_scenarios=warning, overtime_scenario=warning[0] if warning else None, overtime_note=note)
     if gap == 0:
         return dict(**common, status='achieved', scenarios=[], maximum_extra_cents=0)
@@ -186,7 +197,7 @@ def optimize(works, expenses_cents, target_cents, available_minutes):
     pool = feasible or partial
     key=(lambda row:(row['minutes'],row['extra_cents']-gap)) if feasible else (lambda row:(-row['extra_cents'],row['minutes']))
     primary=min(pool,key=key) if pool else None
-    rows=select_diverse(pool,primary,gap,works)
+    rows=select_diverse(pool,primary,gap,works,preference)
     selected=[]
     for index,row in enumerate(rows):
         label=('Menos horas adicionais' if feasible else 'Maior alcance possível') if index==0 else (f"Mix alternativo {index} · {sum(n>0 for n in row['counts'])} atividades" if sum(n>0 for n in row['counts'])>1 else f'Alternativa {index} · 1 atividade')
@@ -197,7 +208,7 @@ def optimize(works, expenses_cents, target_cents, available_minutes):
                              reaches_target=row['extra_cents'] >= gap,
                              shortfall_cents=max(0, gap-row['extra_cents']),
                              total_minutes=base_minutes+row['minutes']))
-    warning, note = overtime_scenario(works,base_minutes,available_minutes,net,gap) if not feasible else ([],None)
+    warning, note = overtime_scenario(works,base_minutes,available_minutes,net,gap,preference) if not feasible else ([],None)
     return dict(**common, status='feasible' if feasible else 'infeasible', scenarios=selected, overtime_scenarios=warning, overtime_scenario=warning[0] if warning else None, overtime_note=note,
                 maximum_extra_cents=best_partial['extra_cents'] if best_partial else 0,
                 best_partial=best_partial if not feasible else None)

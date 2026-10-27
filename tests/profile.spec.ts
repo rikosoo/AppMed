@@ -1,0 +1,28 @@
+import {test,expect} from '@playwright/test';
+import {examplePlan} from '../apps/web/lib/model';
+import {accountLogin} from './helpers/auth';
+test('avatar edits username and password without losing the planning account',async({page,request})=>{
+ const month=new Intl.DateTimeFormat('sv-SE',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit'}).format(new Date()).slice(0,7);
+ await page.addInitScript(data=>localStorage.setItem('financemed.v1',JSON.stringify(data)),{version:1,months:{[month]:{...examplePlan(),demo:false,onboardingComplete:true}}});
+ await page.goto('/');await accountLogin(page);
+ const me=await (await page.request.get('/api/auth/me')).json();const before=await (await page.request.get('/api/plan')).json();
+ expect((await request.post('/api/auth/login',{data:{username:me.user.username,password:'Financial-tests-123!'}})).status()).toBe(200);
+ await expect(page.getByRole('button',{name:'Minha conta',exact:true})).toHaveCount(1);
+ await expect(page.locator('.topbar .avatar')).toHaveCount(0);await expect(page.locator('.topbar .local-badge')).toHaveCount(0);
+ await page.getByRole('button',{name:'Minha conta',exact:true}).click();await page.getByRole('button',{name:'Alterar usuário',exact:true}).click();
+ const username=`new-${crypto.randomUUID().slice(0,8)}`;
+ await page.getByLabel('Novo usuário',{exact:true}).fill(username);await page.getByLabel('Confirme sua senha',{exact:true}).fill('Financial-tests-123!');await page.getByRole('button',{name:'Salvar usuário',exact:true}).click();
+ await expect(page.getByRole('status').filter({hasText:'Usuário atualizado'})).toBeVisible();await expect(page.locator('.account-avatar')).toHaveText('N');
+ expect((await page.request.get('/api/auth/me')).status()).toBe(200);expect((await request.get('/api/plan')).status()).toBe(401);
+ await page.getByRole('button',{name:'Alterar senha',exact:true}).click();
+ await page.setViewportSize({width:320,height:844});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();await page.screenshot({path:`/tmp/financemed-profile-${test.info().project.name}.png`});
+ await page.getByLabel('Senha anterior',{exact:true}).fill('Financial-tests-123!');await page.getByLabel('Nova senha',{exact:true}).fill('Profile-tests-password-456!');await page.getByLabel('Confirmar nova senha',{exact:true}).fill('Other-password-123');await page.getByRole('button',{name:'Salvar nova senha',exact:true}).click();
+ await expect(page.getByRole('alert').filter({hasText:'As novas senhas não coincidem.'})).toBeVisible();
+ await page.getByLabel('Confirmar nova senha',{exact:true}).fill('Profile-tests-password-456!');await page.getByRole('button',{name:'Salvar nova senha',exact:true}).click();await expect(page.getByRole('status').filter({hasText:'Senha atualizada'})).toBeVisible();
+ expect((await (await page.request.get('/api/auth/me')).json()).user.id).toBe(me.user.id);
+ expect(await (await page.request.get('/api/plan')).json()).toEqual(before);
+ await page.getByRole('button',{name:'Fechar conta',exact:true}).click();await page.getByRole('button',{name:'Sair',exact:true}).click();
+ await page.getByLabel('Usuário',{exact:true}).fill(username);await page.getByLabel('Senha',{exact:true}).fill('Profile-tests-password-456!');await page.getByRole('button',{name:'Entrar',exact:true}).click();await expect(page.getByTestId('sync-status')).toHaveText('Salvo no servidor');
+ expect((await (await page.request.get('/api/plan')).json()).store).toEqual(before.store);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
+});

@@ -335,3 +335,26 @@ def test_expanded_choices_do_not_add_redundant_low_value_units_for_variety():
         assert row['reaches_target']
         if row['counts'][0]:assert row['extra_cents']-38000<2500000
         if row['counts'][1]:assert row['extra_cents']-9000<2500000
+
+
+def test_preferences_offer_different_mixes_with_same_optimal_primary():
+    works=[work('base',1000000,8700,1,0),work('c',38000,60,0,10),work('p',125000,720,0,4),work('t',9000,15,0,15)]
+    results={mode:optimize(works,0,3500000,220*60,mode) for mode in ('balanced','time','variety')}
+    variants=set()
+    for mode,result in results.items():
+        assert result['preference']==mode
+        assert result['scenarios'][0]['counts']==[0,10,4,15]
+        assert result['overtime_scenarios'][0]['counts']==[0,66,0,0]
+        variants.add(tuple(tuple(row['counts']) for row in result['overtime_scenarios']))
+        for row in result['overtime_scenarios']:
+            assert row['total_minutes']<=360*60
+            assert row['reaches_target']
+    assert len(variants)==3
+    assert results['time']['overtime_scenarios'][1]['minutes']<results['balanced']['overtime_scenarios'][1]['minutes']
+
+
+def test_preference_validation():
+    import pytest
+    payload=dict(works=[work()],expenses_cents=0,target_cents=500000,available_minutes=1200,preference='invalid')
+    assert client.post('/api/optimizer',json=payload).status_code==422
+    with pytest.raises(ValueError,match='prioridade'):optimize([work()],0,500000,1200,'invalid')

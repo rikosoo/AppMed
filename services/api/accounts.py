@@ -212,3 +212,42 @@ def delete_account(data:DeleteAccount,request:Request,response:Response,user=Dep
         purge_account(db,user['id'])
     response.delete_cookie(COOKIE,path='/',secure=secure_cookie(),httponly=True,samesite='lax')
     response.headers['Cache-Control']='no-store'
+
+
+class UpdateAccount(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+    current_password:str=Field(min_length=1,max_length=128)
+    username:str|None=Field(default=None,min_length=3,max_length=80)
+    new_password:str|None=Field(default=None,min_length=8,max_length=128)
+
+@router.post('/auth/update-account')
+def update_account(data:UpdateAccount,request:Request,response:Response,user=Depends(require_user)):
+    check_auth_transport(request)
+    username=normalize_username(data.username) if data.username is not None else None
+    if username is not None and not re.fullmatch(r'[a-z0-9_.@+\-]{3,80}',username):
+        raise HTTPException(422,'Use de 3 a 80 letras, números ou os símbolos . _ @ + - no usuário.')
+    if username is None and data.new_password is None:
+        raise HTTPException(422,'Informe o novo usuário ou a nova senha.')
+    now=int(time.time())
+    with connect() as db:
+        db.execute('BEGIN IMMEDIATE')
+        row=db.execute('SELECT username,password_hash,role,status FROM users WHERE id=?',(user['id'],)).fetchone()
+        if not row or row['status']!='active':raise HTTPException(401,'Sua sessão expirou. Entre novamente.')
+        db.execute('DELETE FROM login_failures WHERE attempted_at<?',(now-900,))
+        failures=db.execute('SELECT COUNT(*) FROM login_failures WHERE username=? AND attempted_at>?',(row['username'],now-900)).fetchone()[0]
+        if failures>=8:raise HTTPException(429,'Muitas tentativas. Aguarde 15 minutos.',headers={'Retry-After':'900'})
+        if not password_matches(data.current_password,row['password_hash']):
+            db.execute('INSERT INTO login_failures VALUES (?,?)',(row['username'],now));db.commit()
+            raise HTTPException(401,'Senha atual incorreta. Nenhum dado foi alterado.')
+        updated_username=username if username is not None else row['username']
+        if updated_username==row['username'] and data.new_password is None:
+            raise HTTPException(422,'Escolha um nome de usuário diferente do atual.')
+        encoded=password_hash(data.new_password) if data.new_password is not None else row['password_hash']
+        try:
+            db.execute('UPDATE users SET username=?,password_hash=? WHERE id=?',(updated_username,encoded,user['id']))
+        except sqlite3.IntegrityError:
+            raise HTTPException(409,'Este nome de usuário já está em uso. Escolha outro.')
+        db.execute('DELETE FROM login_failures WHERE username IN (?,?)',(row['username'],updated_username))
+        db.execute('DELETE FROM sessions WHERE user_id=?',(user['id'],))
+        issue_session(response,user['id'],db)
+    return {'user':{'id':user['id'],'username':updated_username,'role':row['role']}}

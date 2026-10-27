@@ -1,4 +1,5 @@
 import { afterTax, type TaxRegime } from './finance';
+export type OptimizerPreference = 'balanced'|'time'|'variety';
 export type Work = { gross_cents?: number; tax_regime?: TaxRegime; id: string; name: string; type: string; net_cents: number; minutes: number; quantity: number; max_extra: number };
 export type Expense = { id: string; name: string; category: string; cents: number };
 export type ScenarioItem = { work_id: string; name: string; quantity: number; extra_cents: number; minutes: number };
