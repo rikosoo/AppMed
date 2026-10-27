@@ -77,7 +77,7 @@ No Xcode, selecione o time em Signing & Capabilities e escolha simulador/iPhone.
 - Interface local, cinco telas e assistente de configuração compartilhados com a web.
 - HTTP nativo para login e dados; mantém a sessão por cookie, sem tokens no localStorage.
 - Áreas seguras, aviso de conexão, retomada do aplicativo e botão Voltar no Android.
-- Exportação JSON abre a folha nativa de compartilhamento. O arquivo fica em cache privado do aplicativo; ao compartilhá-lo, o usuário escolhe seu destino. Não concedemos acesso geral ao armazenamento externo. A importação continua pelo seletor de arquivo do sistema.
+- Exportação JSON abre a folha nativa de compartilhamento. O arquivo fica em cache privado do aplicativo; ao compartilhá-lo, o usuário escolhe seu destino. Não concedemos acesso geral ao armazenamento externo.
 - Links HTTPS externos, incluindo o painel administrativo, abrem o navegador do sistema. O navegador tem sessão independente: talvez seja necessário entrar novamente.
 - Backup automático Android desativado; tráfego HTTP e conteúdo misto desativados.
 - Manifesto de privacidade iOS para o acesso a arquivos do plugin Filesystem, incorporado aos recursos do target.
@@ -86,7 +86,7 @@ Sem rede, a interface abre e mostra o estado de conexão, mas entrar e carregar 
 
 ## Verificação antes da distribuição
 
-A compilação da interface e os testes com ponte nativa simulada não substituem testes em aparelhos. Verificar nos dois sistemas: cadastro/login, persistência da sessão após fechar/reabrir, logout, separação de contas, conexão interrompida, importação/exportação, teclado, áreas seguras, botão Voltar e links externos. O comportamento real do cookie nativo deve ser validado no Android/iPhone com o servidor HTTPS atualizado.
+A compilação da interface e os testes com ponte nativa simulada não substituem testes em aparelhos. Verificar nos dois sistemas: cadastro/login, persistência da sessão após fechar/reabrir, logout, separação de contas, conexão interrompida, exportação, teclado, áreas seguras, botão Voltar e links externos. O comportamento real do cookie nativo deve ser validado no Android/iPhone com o servidor HTTPS atualizado.
 
 Esta etapa não publica nas lojas. Ícones/splash, páginas públicas de privacidade/suporte e exclusão de conta já estão preparados. Ainda precisamos revisar as declarações das lojas, gerar builds assinados e testar em aparelhos. Consulte [STORE-READINESS.md](STORE-READINESS.md). O manifesto de APIs do iOS não substitui as declarações de dados no App Store Connect. A aprovação depende da avaliação de cada loja.
 

@@ -57,7 +57,7 @@ No primeiro acesso sem histórico, o assistente pede trabalhos, despesas (ou a e
 - Meta: renda líquida desejada e horas totais disponíveis, incluindo atividades previstas.
 - Otimizar: até três combinações distintas, classificadas por tempo, proximidade da meta e alternativa mista; resultados podem ser menos de três quando não existirem combinações distintas. Cada opção detalha quantidades e nomes dos trabalhos, ganho incremental e horas adicionais/totais. Quando a meta é impossível, mostra até três alternativas parciais, com o valor que ainda falta; não as apresenta como metas alcançadas.
 - Cenários salvos preservam entradas, resultado e versão do motor. Salvar não altera previsão nem registra recebimentos.
-- Planejamentos independentes por mês, persistência por conta no servidor, exportação JSON e importação confirmada na configuração inicial.
+- Planejamentos independentes por mês, persistência por conta no servidor, exportação JSON para consulta.
 - Entrada local, saída de sessão e preenchimento inicial guiado em três etapas, sem dados fictícios.
 
 ## Cálculos e limites
@@ -68,7 +68,7 @@ A meta impossível informa a receita incremental máxima dentro dos limites. A p
 
 ## Persistência e privacidade
 
-Os dados são separados por conta no banco SQLite; o navegador mantém cópia temporária de alterações ainda não salvas. Não cadastrar dados de pacientes. Faça backup do volume do banco. A migração do armazenamento antigo do navegador e a importação de JSON exigem confirmação explícita; mudar de domínio não transfere automaticamente o armazenamento antigo. Consulte docs/DOMINIO.md.
+Os dados são separados por conta no banco SQLite; o navegador mantém cópia temporária de alterações ainda não salvas. Não cadastrar dados de pacientes. Faça backup do volume do banco. A migração do armazenamento antigo deste navegador exige confirmação explícita; mudar de domínio não transfere automaticamente o armazenamento antigo. Consulte docs/DOMINIO.md.
 
 ## Verificação
 

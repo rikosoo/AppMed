@@ -52,13 +52,3 @@ test('a concurrent edit is not silently overwritten',async({page})=>{
  await expect(page.getByRole('alert').filter({hasText:'outra aba ou dispositivo'})).toBeVisible();expect((await (await page.request.get('/api/plan')).json()).store.months[month()].target).toBe(6000000);
  page.once('dialog',dialog=>dialog.accept());await page.getByRole('button',{name:'Usar dados do servidor'}).click();await expect(page.getByLabel('Renda líquida desejada')).toHaveValue('60000');
 });
-
-test('exported JSON is imported only after explicit account confirmation',async({page})=>{
- await page.goto('/');await accountLogin(page);await expect(page.getByRole('heading',{name:'Como você ganha sua renda?'})).toBeVisible();
- await page.getByText('Já tem um arquivo exportado? Importar JSON',{exact:true}).click();
- const data={version:1,months:{[month()]:{...examplePlan(),demo:false,onboardingComplete:true,target:3456700}}};
- await page.getByLabel('Arquivo de planejamento').setInputFiles({name:'financemed.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(data))});
- await expect(page.getByRole('button',{name:'Confirmar importação'})).toBeVisible();expect((await (await page.request.get('/api/plan')).json()).store.months).toEqual({});
- await page.getByRole('button',{name:'Confirmar importação'}).click();await expect.poll(async()=>(await (await page.request.get('/api/plan')).json()).revision).toBeGreaterThan(0);
- expect((await (await page.request.get('/api/plan')).json()).store.months[month()].target).toBe(3456700);
-});

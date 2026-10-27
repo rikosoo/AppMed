@@ -58,7 +58,7 @@ Use uma conta de teste para a exclusão:
 - Cadastrar no site, entrar com a mesma conta no Android e conferir os mesmos dados.
 - Alterar no Android, aguardar Salvo no servidor, atualizar o site e conferir. Se as duas telas editarem ao mesmo tempo, o conflito deve impedir sobrescrita silenciosa.
 - Fechar/reabrir o app, verificar sessão, teclado, áreas seguras e botão Voltar.
-- Exportar/importar JSON; alternar rede e verificar erro/repetição sem apagar dados.
+- Exportar JSON; alternar rede e verificar erro/repetição sem apagar dados.
 - Abrir Minha conta, cancelar exclusão e confirmar que a conta continua ativa.
 - Confirmar exclusão com senha da conta de teste; verificar que outro dispositivo não consegue carregar/salvar dados com a sessão antiga.
 - Repetir em iOS antes da publicação. A compilação do simulador não substitui teste de execução e revisão visual.

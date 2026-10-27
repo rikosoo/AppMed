@@ -38,7 +38,7 @@ sudo docker compose --env-file deploy/.env -f deploy/compose.prod.yml exec api p
 
 O comando imprime o caminho do backup dentro do container. Copie uma cópia para fora da EC2 e proteja-a, pois contém dados das contas. O script `scripts/update-server.sh` também cria backup antes de atualizar um banco existente. Ainda não há recuperação de senha por e-mail.
 
-Os dados antigos do navegador não migram automaticamente entre localhost, IP e domínio. Exporte o JSON no endereço antigo e importe na configuração inicial da sua conta no endereço novo, conferindo antes de confirmar. O arquivo original permanece intacto.
+Os dados já salvos no servidor ficam disponíveis ao entrar com a mesma conta no novo domínio, preservando o banco. Dados antigos guardados apenas em outro navegador não são transferidos automaticamente; mantenha uma exportação para consulta. A configuração inicial não oferece importação de arquivos JSON.
 
 Ao trocar de domínio futuramente, ajuste DNS, `APP_DOMAIN` e `APP_ORIGIN`, e recrie os serviços. Usuários precisarão entrar novamente no novo endereço; o banco permanece no volume.
 

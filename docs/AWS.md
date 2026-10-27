@@ -7,7 +7,7 @@ Este guia usa **AWS Lightsail + Ubuntu 24.04 LTS + Docker Compose + Caddy**. O L
 - Conta AWS e um domínio ou subdomínio que você controla, por exemplo `finance.seudominio.com.br`.
 - Instância Ubuntu 24.04 LTS com **4 GB de RAM recomendados**, porque a compilação acontece na própria máquina. Confira o preço mensal na AWS antes de criar.
 - O aplicativo usa contas individuais em SQLite; o login próprio protege os dados e a API; a proteção externa do Caddy foi retirada para a integração mobile. Consulte [a configuração atual de domínio e banco](DOMINIO.md), inclusive `APP_ORIGIN`, antes de atualizar um deploy anterior.
-- Contas e planejamentos ficam no volume persistente `api_data`. Para trazer dados antigos de outro endereço, exporte o JSON e importe na configuração inicial da conta. Nunca use `down -v` em um ambiente com dados que deseja preservar.
+- Contas e planejamentos ficam no volume persistente `api_data`. Ao mudar de endereço, entre com a mesma conta para carregar os dados já salvos no servidor. Nunca use `down -v` em um ambiente com dados que deseja preservar.
 
 ## 1. Criar a máquina no Lightsail
 
