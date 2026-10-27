@@ -2,30 +2,32 @@
 from itertools import product, combinations
 from math import prod
 
-ENGINE_VERSION = '1.9.0'
+ENGINE_VERSION = '1.10.0'
 MAX_MONTHLY_MINUTES = 360 * 60
 
 
-def select_diverse(pool, first, gap, works, preference='balanced', limit=3):
+def select_diverse(pool, first, gap, works, preference='balanced', limit=3, wide=False):
     """Keep the exact primary; select materially different, useful alternatives.
 
     Diversity uses integer normalized quantity distances. Partial alternatives
-    prefer at least 80% of primary income when that quality is available among
-    mixed options; this is a selection heuristic, not a second financial optimum.
+    prefer 65% of primary income for broad regular mixes (50% for variety,
+    80% for time/expanded mixes) when available among mixed options.
+    This is a selection heuristic, not a second financial optimum.
     """
     if first is None:
         return []
     selected=[first]
     seen={tuple(first['counts'])}
     references=[max(1,max(row['counts'][i] for row in pool)) for i in range(len(first['counts']))]
-    thresholds=[max(1,(value+4)//5) for value in references]
+    thresholds=[max(1,(value*2+4)//5 if wide and preference!='time' else (value+4)//5) for value in references]
     for _ in range(limit-1):
         candidates=[row for row in pool if tuple(row['counts']) not in seen]
         mixed=[row for row in candidates if sum(n>0 for n in row['counts'])>=2]
         if mixed:
             candidates=mixed
         if first['extra_cents']<gap:
-            useful=[row for row in candidates if row['extra_cents']*5>=first['extra_cents']*4]
+            floor=(50 if preference=='variety' else 65) if wide and preference!='time' else 80
+            useful=[row for row in candidates if row['extra_cents']*100>=first['extra_cents']*floor]
             if useful:
                 candidates=useful
         balanced=[row for row in candidates if sum(n*w['net_cents']*5>=row['extra_cents'] for n,w in zip(row['counts'],works) if n>0)>=2]
@@ -48,6 +50,8 @@ def select_diverse(pool, first, gap, works, preference='balanced', limit=3):
             concentration=max(n*w['net_cents'] for n,w in zip(counts,works))*1000//max(1,row['extra_cents'])
             if preference=='time':
                 return (-row['minutes'], -row['extra_cents'] if row['extra_cents']>=gap else row['extra_cents'],novelty,material,changed,distance,tuple(counts))
+            if wide and preference!='time':
+                return (novelty,distance,material,-concentration if preference=='balanced' else changed,*quality,tuple(counts))
             if preference=='balanced':
                 return (novelty,-concentration,material,changed,distance,*quality,tuple(counts))
             return (novelty,material,changed,distance,sum(n>0 for n in counts),*quality,tuple(counts))
@@ -197,7 +201,7 @@ def optimize(works, expenses_cents, target_cents, available_minutes, preference=
     pool = feasible or partial
     key=(lambda row:(row['minutes'],row['extra_cents']-gap)) if feasible else (lambda row:(-row['extra_cents'],row['minutes']))
     primary=min(pool,key=key) if pool else None
-    rows=select_diverse(pool,primary,gap,works,preference)
+    rows=select_diverse(pool,primary,gap,works,preference,wide=True)
     selected=[]
     for index,row in enumerate(rows):
         label=('Menos horas adicionais' if feasible else 'Maior alcance possível') if index==0 else (f"Mix alternativo {index} · {sum(n>0 for n in row['counts'])} atividades" if sum(n>0 for n in row['counts'])>1 else f'Alternativa {index} · 1 atividade')

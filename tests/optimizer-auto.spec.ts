@@ -31,3 +31,19 @@ test('an obsolete automatic result cannot replace a newer priority result',async
  await page.getByRole('button',{name:'Mais variedade',exact:true}).click();await expect(page.getByRole('heading',{name:'Você já chegou lá!'})).toBeVisible();
  release();await expect.poll(()=>finished).toBeTruthy();await expect(page.getByRole('heading',{name:'Você já chegou lá!'})).toBeVisible();await expect(page.getByRole('heading',{name:'A meta precisa de um ajuste'})).toHaveCount(0);
 });
+
+
+test('opening optimization from a scrolled page starts at the top after automatic results',async({page})=>{
+ await seed(page);
+ await page.evaluate(()=>window.scrollTo(0,document.body.scrollHeight));
+ expect(await page.evaluate(()=>window.scrollY)).toBeGreaterThan(0);
+ const nav=page.getByRole('navigation',{name:test.info().project.name==='mobile'?'Navegação móvel':'Menu principal'});
+ await nav.getByRole('button',{name:'Otimizar',exact:true}).click();
+ await expect(page.locator('.results .scenario')).toHaveCount(3);
+ await expect.poll(()=>page.evaluate(()=>window.scrollY)).toBe(0);
+ await page.evaluate(()=>window.scrollTo(0,document.body.scrollHeight));
+ await nav.getByRole('button',{name:'Início',exact:true}).click();
+ await page.getByRole('button',{name:'Otimizar minha renda',exact:true}).click();
+ await expect(page.locator('.results .scenario')).toHaveCount(3);
+ await expect.poll(()=>page.evaluate(()=>window.scrollY)).toBe(0);
+});

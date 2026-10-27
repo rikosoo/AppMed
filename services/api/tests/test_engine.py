@@ -358,3 +358,24 @@ def test_preference_validation():
     payload=dict(works=[work()],expenses_cents=0,target_cents=500000,available_minutes=1200,preference='invalid')
     assert client.post('/api/optimizer',json=payload).status_code==422
     with pytest.raises(ValueError,match='prioridade'):optimize([work()],0,500000,1200,'invalid')
+
+
+def test_regular_screenshot_mixes_change_multiple_activities_substantially():
+    works=[work('base',1000000,8775,1,0),work('c',36500,60,0,10),work('p',119000,720,0,4),work('t',8500,15,0,15)]
+    result=optimize(works,0,3500000,220*60)
+    rows=result['scenarios']
+    assert rows[0]['counts']==[0,10,4,15]
+    assert rows[0]['extra_cents']==968500
+    for index,row in enumerate(rows):
+        assert row['total_minutes']<=220*60
+        assert all(n<=w['max_extra'] for n,w in zip(row['counts'],works))
+        assert row['extra_cents']*100>=rows[0]['extra_cents']*65
+        for previous in rows[:index]:
+            assert sum(abs(a-b)>=max(1,(w['max_extra']*2+4)//5) for a,b,w in zip(row['counts'],previous['counts'],works))>=2
+    assert rows[1]['minutes']!=rows[2]['minutes']
+
+
+def test_regular_low_choice_space_falls_back_without_fabricating_mixes():
+    result=optimize([work('only',10000,60,0,1)],0,20000,120)
+    assert len(result['scenarios'])==1
+    assert result['scenarios'][0]['counts']==[1]

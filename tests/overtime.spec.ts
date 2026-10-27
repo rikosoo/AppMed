@@ -53,8 +53,8 @@ test('three job types produce meaningfully different regular and target-reaching
  await page.goto('/');await accountLogin(page);await nav(page,'Otimizar').click();await page.getByRole('button',{name:'Encontrar combinações'}).click();
  const regular=page.locator('.results .scenario');await expect(regular).toHaveCount(3);
  await expect(regular.first()).toContainText('10 × Consultório');await expect(regular.first()).toContainText('4 × Plantão');
- await expect(regular.nth(2)).not.toContainText('10 × Consultório');
- await expect(regular.nth(1)).not.toContainText('4 × Plantão');
+ const compositions=await regular.locator('.scenario-composition').allTextContents();
+ expect(new Set(compositions).size).toBe(3);
  const expanded=page.getByRole('region',{name:'Combinações para atingir a meta'}).locator('.overtime-card');
  await expect(expanded).toHaveCount(3);await expect(expanded.first()).toContainText('66 × Consultório');
  await expect(expanded.nth(1).locator('.scenario-composition li')).toHaveCount(3);
