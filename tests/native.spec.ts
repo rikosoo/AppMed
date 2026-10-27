@@ -29,6 +29,13 @@ for(const platform of ['android','ios'])test(`${platform}: bundled login uses na
  await page.goto('/');await page.getByRole('button',{name:'Criar conta',exact:true}).click();
  await page.getByLabel('Usuário',{exact:true}).fill('native-doctor');await page.getByLabel('Senha',{exact:true}).fill('Native-tests-123');await page.getByLabel('Confirmar senha').fill('Native-tests-123');await page.getByRole('button',{name:'Criar minha conta'}).click();
  await expect(page.getByTestId('sync-status')).toHaveText('Salvo no servidor');
+ for(const [width,height] of [[320,568],[390,400],[844,390],[768,1024]]){
+  await page.setViewportSize({width,height});
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
+  await page.getByRole('button',{name:'Minha conta',exact:true}).click();
+  const close=page.getByRole('button',{name:'Fechar conta',exact:true});await close.scrollIntoViewIfNeeded();await expect(close).toBeInViewport();await close.click();
+ }
+ await page.setViewportSize({width:390,height:844});
  const calls=await page.evaluate(()=>(window as any).__calls.filter((c:any)=>c.plugin==='CapacitorHttp'));
  expect(calls.every((c:any)=>c.options.url.startsWith('https://app.75hard.club/api/'))).toBeTruthy();
  const register=calls.find((c:any)=>c.options.url.endsWith('/auth/register'));

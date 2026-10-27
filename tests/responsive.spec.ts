@@ -1,7 +1,7 @@
 import { accountLogin } from './helpers/auth';
 import { test, expect } from '@playwright/test';
 import { examplePlan } from '../apps/web/lib/model';
-const widths=[320,390,768,1024,1440];
+const widths=[320,360,375,390,414,600,767,768,820,1023,1024,1280,1440,1920,2560];
 async function noOverflow(page:import('@playwright/test').Page){
  const dimensions=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,visible:innerWidth}));
  expect(dimensions.scroll,`horizontal overflow at ${dimensions.visible}px`).toBeLessThanOrEqual(dimensions.visible);
@@ -23,7 +23,7 @@ test('login and initial setup fit small phones, tablets and desktop',async({page
  }
 });
 test('all five views and edit dialog remain usable across screen sizes',async({page})=>{
- test.setTimeout(60000);
+ test.setTimeout(120000);
  const month=new Intl.DateTimeFormat('sv-SE',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit'}).format(new Date()).slice(0,7);
  const data={version:1,months:{[month]:{...examplePlan(),demo:false,onboardingComplete:true}}};
  data.months[month].works[0].name='Consultório particular de cardiologia e acompanhamento clínico';
@@ -49,5 +49,42 @@ test('all five views and edit dialog remain usable across screen sizes',async({p
   const amount=page.getByLabel('Valor bruto por unidade');expect(await amount.evaluate(el=>parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(16);
   await page.getByRole('button',{name:'Fechar',exact:true}).click();
   expect(await page.evaluate(()=>document.body.style.overflow)).not.toBe('hidden');
+ }
+});
+
+
+test('registration and public pages fit small, landscape and wide screens',async({page})=>{
+ await page.goto('/');await page.getByRole('button',{name:'Criar conta',exact:true}).click();
+ for(const [width,height] of [[320,568],[375,667],[844,390],[1024,600],[2560,1440]]){
+  await page.setViewportSize({width,height});await noOverflow(page);
+  const submit=page.getByRole('button',{name:'Criar minha conta',exact:true});await submit.scrollIntoViewIfNeeded();await expect(submit).toBeInViewport();
+  expect((await submit.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+ }
+ for(const path of ['/privacidade','/suporte','/excluir-conta']){
+  await page.goto(path);
+  for(const [width,height] of [[320,568],[844,390],[768,1024],[2560,1440]]){
+   await page.setViewportSize({width,height});await noOverflow(page);await expect(page.getByRole('heading',{level:1})).toBeVisible();
+  }
+ }
+});
+
+test('account forms and work dialog remain reachable with short viewports',async({page})=>{
+ const month=new Intl.DateTimeFormat('sv-SE',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit'}).format(new Date()).slice(0,7);
+ await page.addInitScript(data=>localStorage.setItem('financemed.v1',JSON.stringify(data)),{version:1,months:{[month]:{...examplePlan(),demo:false,onboardingComplete:true}}});
+ await page.goto('/');await login(page);
+ for(const [width,height] of [[320,568],[390,400],[844,390],[1024,600],[2560,1440]]){
+  await page.setViewportSize({width,height});
+  await page.getByRole('button',{name:'Minha conta',exact:true}).click();
+  const dialog=page.getByRole('dialog');await expect(dialog).toBeVisible();
+  for(const name of ['Alterar usuário','Alterar senha','Excluir minha conta']){
+   await dialog.getByRole('button',{name,exact:true}).click();await noOverflow(page);
+   const submit=dialog.locator('button[type=submit]');await submit.scrollIntoViewIfNeeded();await expect(submit).toBeInViewport();
+   const box=await dialog.boundingBox();expect(box!.y).toBeGreaterThanOrEqual(0);expect(box!.y+box!.height).toBeLessThanOrEqual(height);
+  }
+  await dialog.getByRole('button',{name:'Fechar conta',exact:true}).click();
+  const nav=page.getByRole('navigation',{name:width<1024?'Navegação móvel':'Menu principal'});
+  await nav.getByRole('button',{name:'Trabalhos',exact:true}).click();await page.getByRole('button',{name:'Adicionar trabalho',exact:true}).click();
+  await noOverflow(page);const save=page.getByRole('button',{name:'Salvar trabalho',exact:true});await save.scrollIntoViewIfNeeded();await expect(save).toBeInViewport();
+  await page.getByRole('button',{name:'Fechar',exact:true}).click();
  }
 });

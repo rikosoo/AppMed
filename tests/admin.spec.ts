@@ -55,7 +55,7 @@ test('admin charts filter daily history and remain accessible on small screens',
  await expect(slider).toHaveAttribute('aria-valuetext',new RegExp(expected.toISOString().slice(0,10)));
  await charts.getByText('Ver dados em tabela',{exact:true}).first().click();
  await expect(charts.getByRole('table',{name:'Dados: Novos usuários por dia'}).getByRole('row')).toHaveCount(8);
- for(const width of [320,390,768,1440]){await page.setViewportSize({width,height:900});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();}
+ for(const width of [320,360,390,600,767,768,820,1023,1024,1440,1920,2560]){await page.setViewportSize({width,height:900});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();}
  await charts.getByRole('button',{name:'30 dias',exact:true}).click();await expect(slider).toHaveAttribute('max','29');
  await page.setViewportSize({width:390,height:844});await charts.screenshot({path:`/tmp/financemed-admin-charts-${test.info().project.name}.png`});
 });
