@@ -315,3 +315,5 @@ footer button { min-height: 44px; font-size: 12px; }
 .shell{overflow-anchor:none}
 
 .recovery-shell{display:flex;justify-content:center;align-items:flex-start;min-height:100dvh;padding:24px 16px}.recovery-form{width:min(520px,100%);min-width:0;padding:24px;overflow-wrap:anywhere}.recovery-form h2{font-size:28px}.recovery-form p{line-height:1.7;margin:16px 0}.recovery-form input{font-size:16px}
+
+.scenario-hours{display:grid;gap:6px;margin:0;min-width:0}.scenario-hours>div{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:13px}.scenario-hours dt{min-width:0}.scenario-hours dd{margin:0;font-weight:600;flex-shrink:0}.scenario-hours-total{border-top:1px solid #e4b7ad;padding-top:8px;font-weight:600}

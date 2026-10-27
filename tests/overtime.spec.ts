@@ -11,8 +11,9 @@ test('overtime is a separate red alert with explicit excess and total hours',asy
  await seed(page);await nav(page,'Otimizar').click();await page.getByRole('button',{name:'Encontrar combinações'}).click();
  await expect(page.locator('.results .scenario')).toHaveCount(3);
  const warning=page.getByRole('region',{name:'Combinações para atingir a meta'});
- await expect(warning).toBeVisible();await expect(warning.locator('.overtime-card')).toHaveCount(3);await expect(warning).toContainText('40 × Consultório particular');await expect(warning).toContainText('30h');await expect(warning.locator('.overtime-card').first()).toContainText('140h');await expect(warning).toContainText('360h');await expect(warning).toContainText('teto: 360h');await expect(warning).toContainText('Alcança a meta');await expect(warning).toContainText('Trabalho adicional necessário');await expect(warning).toContainText('atingir sua meta');
+ await expect(warning).toBeVisible();await expect(warning.locator('.overtime-card')).toHaveCount(3);await expect(warning).toContainText('40 × Consultório particular');await expect(warning).toContainText('30h');await expect(warning.locator('.overtime-card').first()).toContainText('140h');await expect(warning).toContainText('360h');await expect(warning).toContainText('Alcança a meta');await expect(warning).toContainText('Extras deste cenário');await expect(warning).toContainText('atingir sua meta');
  expect(await page.locator('.overtime-card').first().evaluate(el=>getComputedStyle(el).borderTopColor)).toBe('rgb(206, 116, 106)');
+ const summary=warning.locator('.overtime-card').first().locator('.overtime-alert');await expect(summary).toContainText('Já previstas100h');await expect(summary).toContainText('Extras deste cenário+40h');await expect(summary).toContainText('Total no mês140h');await expect(summary).toContainText('30h acima das suas 110h disponíveis.');
  await expect(warning.getByRole('button',{name:'Salvar cenário'})).toHaveCount(0);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
  await page.screenshot({path:`/tmp/financemed-overtime-${test.info().project.name}.png`,fullPage:true});
@@ -30,7 +31,7 @@ test('expanded capacity respects 360h and remains mobile first at narrow widths'
  const warning=page.getByRole('region',{name:'Combinações para atingir a meta'});await expect(warning).toBeVisible();
  for(const width of [320,390,768,1024,1440]){
   await page.setViewportSize({width,height:844});
-  await expect(warning).toContainText('40 × Consultório particular');await expect(warning).toContainText('360h');await expect(warning).toContainText('Trabalho adicional necessário');
+  await expect(warning).toContainText('40 × Consultório particular');await expect(warning).toContainText('360h');await expect(warning).toContainText('Extras deste cenário');
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
  }
  const unchanged=await page.evaluate(()=>{const data=JSON.parse(localStorage.getItem('financemed.v1')!);return Object.values(data.months).map((p:any)=>p.works[0].max_extra);});
@@ -42,7 +43,7 @@ test('unreachable goals are labeled partial and never require more than 360h',as
  await nav(page,'Otimizar').click();await page.getByRole('button',{name:'Encontrar combinações'}).click();
  const warning=page.getByRole('region',{name:'Combinações para atingir a meta'});
  await expect(warning.getByRole('heading',{name:'O que é possível até 360h'})).toBeVisible();
- await expect(warning.locator('.overtime-card').first()).toContainText('meta não alcançada');await expect(warning.locator('.overtime-card').first()).toContainText('820.000,00');await expect(warning.locator('.overtime-card').first()).toContainText('Total do mês: 360h');
+ await expect(warning.locator('.overtime-card').first()).toContainText('meta não alcançada');await expect(warning.locator('.overtime-card').first()).toContainText('820.000,00');await expect(warning.locator('.overtime-card').first()).toContainText('Total no mês360h');
 });
 
 test('three job types produce meaningfully different regular and target-reaching mixes',async({page})=>{

@@ -117,8 +117,8 @@ test('screenshot: partial mixes, expanded limits and readable server failures',a
  await expect(page.locator('.scenario-status.partial')).toHaveCount(3);
  await expect(page.locator('.overtime-card').first()).toContainText('88 × Consultório particular');
  await expect(page.locator('.overtime-card')).toHaveCount(3);
- await expect(page.locator('.overtime-card').first()).toContainText('Além das horas disponíveis: 0h');
- for(const index of [1,2]){const card=page.locator('.overtime-card').nth(index);await expect(card.locator('.scenario-composition li')).toHaveCount(2);await expect(card).toContainText('Plantão no hospital');await expect(card).not.toContainText('88 × Consultório particular');await expect(card).toContainText('teto: 360h');}
+ await expect(page.locator('.overtime-card').first()).toContainText('Dentro das suas');
+ for(const index of [1,2]){const card=page.locator('.overtime-card').nth(index);await expect(card.locator('.scenario-composition li')).toHaveCount(2);await expect(card).toContainText('Plantão no hospital');await expect(card).not.toContainText('88 × Consultório particular');await expect(card).toContainText('Total no mês');}
  await expect(page.locator('.scenario').first()).toContainText('36.900,00');
  await page.getByLabel('Limite adicional Consultório particular').fill('100');
  await page.getByRole('button',{name:'Encontrar combinações'}).click();
