@@ -313,3 +313,5 @@ footer button { min-height: 44px; font-size: 12px; }
 
 /* Keep asynchronous scenario insertion from anchoring the page to its footer. */
 .shell{overflow-anchor:none}
+
+.recovery-shell{display:flex;justify-content:center;align-items:flex-start;min-height:100dvh;padding:24px 16px}.recovery-form{width:min(520px,100%);min-width:0;padding:24px;overflow-wrap:anywhere}.recovery-form h2{font-size:28px}.recovery-form p{line-height:1.7;margin:16px 0}.recovery-form input{font-size:16px}

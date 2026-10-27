@@ -4,6 +4,13 @@ services:
     environment:
       DATABASE_PATH: /data/financemed.sqlite3
       SESSION_COOKIE_SECURE: "true"
+      APP_ORIGIN: ${APP_ORIGIN:?Defina APP_ORIGIN}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURITY: ${SMTP_SECURITY:-starttls}
+      SMTP_FROM: ${SMTP_FROM:-}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       APP_ALLOWED_ORIGINS: ${APP_ORIGIN:?Defina APP_ORIGIN com https em deploy/.env}
     volumes:
       - api_data:/data

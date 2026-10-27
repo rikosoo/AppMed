@@ -11,7 +11,7 @@ import unicodedata
 import uuid
 from contextlib import contextmanager
 from pathlib import Path
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, Field, ConfigDict
 from account_cleanup import record_deletion, purge_account, enforce_deletions, prune_backups
 
@@ -43,12 +43,18 @@ def connect():
     connection.executescript(SCHEMA)
     # Upgrade existing accounts without replacing users or their financial plans.
     columns={row['name'] for row in connection.execute('PRAGMA table_info(users)')}
-    for name,definition in [('role', "TEXT NOT NULL DEFAULT 'user'"),('status', "TEXT NOT NULL DEFAULT 'active'"),('last_login_at','INTEGER'),('last_active_at','INTEGER')]:
+    for name,definition in [('role', "TEXT NOT NULL DEFAULT 'user'"),('status', "TEXT NOT NULL DEFAULT 'active'"),('last_login_at','INTEGER'),('last_active_at','INTEGER'),('recovery_email','TEXT')]:
         if name not in columns:
             try: connection.execute(f'ALTER TABLE users ADD COLUMN {name} {definition}')
             except sqlite3.OperationalError:
                 if name not in {r['name'] for r in connection.execute('PRAGMA table_info(users)')}: raise
     connection.executescript('''
+    CREATE UNIQUE INDEX IF NOT EXISTS recovery_email_unique ON users(recovery_email) WHERE recovery_email IS NOT NULL;
+    CREATE TABLE IF NOT EXISTS recovery_tokens (
+        token_hash TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        purpose TEXT NOT NULL,email TEXT NOT NULL,credential_hash TEXT NOT NULL,expires_at INTEGER NOT NULL);
+    CREATE TABLE IF NOT EXISTS recovery_attempts (key_hash TEXT NOT NULL,created_at INTEGER NOT NULL);
+    CREATE INDEX IF NOT EXISTS recovery_attempt_key ON recovery_attempts(key_hash,created_at);
     CREATE TABLE IF NOT EXISTS usage_daily (
         user_id TEXT NOT NULL REFERENCES users(id), day TEXT NOT NULL, event TEXT NOT NULL,
         count INTEGER NOT NULL DEFAULT 1, PRIMARY KEY(user_id,day,event));
@@ -114,6 +120,9 @@ class Credentials(BaseModel):
     username:str=Field(min_length=1,max_length=80)
     password:str=Field(min_length=1,max_length=128)
 
+class Registration(Credentials):
+    email:str|None=Field(default=None,min_length=3,max_length=254)
+
 def issue_session(response,user_id,db):
     token=secrets.token_urlsafe(32)
     now=int(time.time())
@@ -124,8 +133,12 @@ def issue_session(response,user_id,db):
     response.headers['Cache-Control']='no-store'
 
 @router.post('/auth/register',status_code=201)
-def register(data:Credentials,request:Request,response:Response):
+def register(data:Registration,request:Request,response:Response,tasks:BackgroundTasks):
     check_auth_transport(request)
+    email=None
+    if data.email is not None:
+        from recovery import mail_settings, normalize_email, issue_token, deliver_email
+        mail_settings();email=normalize_email(data.email)
     username=normalize_username(data.username)
     if not re.fullmatch(r'[a-z0-9_.@+\-]{3,80}',username):
         raise HTTPException(422,'Use um usuário com 3 a 80 letras, números ou os símbolos . _ @ + - .')
@@ -138,6 +151,9 @@ def register(data:Credentials,request:Request,response:Response):
         except sqlite3.IntegrityError:
             raise HTTPException(409,'Este usuário já está cadastrado. Entre na sua conta ou escolha outro nome.')
         issue_session(response,user_id,db)
+        if email:
+            row=db.execute('SELECT id,password_hash FROM users WHERE id=?',(user_id,)).fetchone()
+            token=issue_token(db,row,'verify',email);tasks.add_task(deliver_email,email,'verify',token)
     return {'user':{'id':user_id,'username':username,'role':'user'}}
 
 @router.post('/auth/login')

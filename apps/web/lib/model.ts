@@ -1,3 +1,4 @@
+import {parseMoney} from './money';
 import { afterTax, type TaxRegime } from './finance';
 export type OptimizerPreference = 'balanced'|'time'|'variety';
 export type Work = { gross_cents?: number; tax_regime?: TaxRegime; id: string; name: string; type: string; net_cents: number; minutes: number; quantity: number; max_extra: number };
@@ -12,7 +13,7 @@ export type Plan = { works: Work[]; expenses: Expense[]; target: number; availab
 export type Store = { version: 1; months: Record<string, Plan> };
 export const currency = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 2 }).format(v / 100);
 export const hours = (v: number) => `${new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 }).format(v / 60)}h`;
-export const cents = (value: string) => { const [whole, fraction = ''] = value.split('.'); return Number(whole) * 100 + Number(fraction.padEnd(2, '0').slice(0,2)); };
+export const cents = (value: string) => parseMoney(value) ?? NaN;
 export const emptyPlan = (): Plan => ({ works: [], expenses: [], target: 0, available: 0, saved: [], demo: false });
 export const examplePlan = (): Plan => ({ target: 4000000, available: 14400, demo: true, saved: [], works: [
  { id:'consultas', name:'Consultório particular', type:'Consulta', net_cents:28000, minutes:60, quantity:80, max_extra:40 },

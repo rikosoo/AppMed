@@ -3,12 +3,14 @@ from pydantic import BaseModel, Field, ConfigDict, model_validator
 from typing import Literal, Any
 import json
 from accounts import router as accounts_router, require_user, check_origin, connect
+from recovery import router as recovery_router
 from admin import router as admin_router, record_event
 from finance import after_tax
 from engine import ENGINE_VERSION, MAX_MONTHLY_MINUTES, optimize
 
 app = FastAPI(title='FinanceMed AI', version='0.2.0')
 app.include_router(accounts_router)
+app.include_router(recovery_router)
 app.include_router(admin_router)
 
 class Work(BaseModel):

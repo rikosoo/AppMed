@@ -26,7 +26,7 @@ for(const platform of ['android','ios'])test(`${platform}: bundled login uses na
    }
   };
  },{platform,store});
- await page.goto('/');await page.getByRole('button',{name:'Criar conta',exact:true}).click();
+ await page.goto('/');await page.getByRole('button',{name:'Esqueci minha senha',exact:true}).click();await expect(page.getByRole('heading',{name:'Esqueceu a senha?'})).toBeVisible();await page.evaluate(()=>document.dispatchEvent(new Event('financemed:back',{cancelable:true})));await expect(page.getByRole('heading',{name:'Entre no seu espaço.'})).toBeVisible();await page.getByRole('button',{name:'Criar conta',exact:true}).click();
  await page.getByLabel('Usuário',{exact:true}).fill('native-doctor');await page.getByLabel('Senha',{exact:true}).fill('Native-tests-123');await page.getByLabel('Confirmar senha').fill('Native-tests-123');await page.getByRole('button',{name:'Criar minha conta'}).click();
  await expect(page.getByTestId('sync-status')).toHaveText('Salvo no servidor');
  for(const [width,height] of [[320,568],[390,400],[844,390],[768,1024]]){
