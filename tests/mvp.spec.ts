@@ -22,7 +22,7 @@ test('login rejects wrong credentials and onboarding starts blank', async ({page
  await login(page);
  await expect(page.getByRole('heading',{name:'Como você ganha sua renda?'})).toBeVisible();
  for(const input of await page.locator('.setup-card input').all())await expect(input).toHaveValue('');
- for(const field of await page.getByRole('combobox').all())await expect(field).toHaveValue('');
+ for(const field of await page.locator('select:not([name="duration_unit"])').all())await expect(field).toHaveValue('');
  await expect(page.getByRole('button',{name:'Continuar',exact:true})).toBeDisabled();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
  await page.screenshot({path:`/tmp/financemed-setup-${test.info().project.name}.png`,fullPage:true});

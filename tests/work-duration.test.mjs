@@ -11,3 +11,8 @@ test('editing every valid stored minute duration preserves its original time',()
  for(let minutes=1;minutes<=21600;minutes++)assert.equal(parseWorkDuration(formatWorkDuration(minutes)),minutes);
  assert.equal(formatWorkDuration(18),'0,3');assert.equal(formatWorkDuration(90),'1,5');assert.equal(durationLabel(30),'30 min');assert.equal(durationLabel(90),'1h30');
 });
+
+test('minutes mode accepts whole minutes and enforces the same 360h ceiling',()=>{
+ for(const value of [1,30,45,90,21600]){assert.equal(parseWorkDuration(String(value),'minutes'),value);assert.equal(formatWorkDuration(value,'minutes'),String(value));}
+ for(const value of ['0','-1','21601','1.5','1,5','abc'])assert.equal(parseWorkDuration(value,'minutes'),null,value);
+});
