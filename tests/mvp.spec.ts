@@ -21,7 +21,7 @@ test('login rejects wrong credentials and onboarding starts blank', async ({page
  await expect(page.getByRole('alert').filter({hasText:'Usuário ou senha incorretos'})).toBeVisible();
  await login(page);
  await expect(page.getByRole('heading',{name:'Como você ganha sua renda?'})).toBeVisible();
- for(const input of await page.locator('.setup-card input').all())await expect(input).toHaveValue('');
+ for(const input of await page.locator('.setup-card input:not([type=checkbox])').all())await expect(input).toHaveValue('');
  for(const field of await page.locator('select:not([name="duration_unit"])').all())await expect(field).toHaveValue('');
  await expect(page.getByRole('button',{name:'Continuar',exact:true})).toBeDisabled();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();

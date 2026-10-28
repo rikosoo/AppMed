@@ -379,3 +379,21 @@ def test_regular_low_choice_space_falls_back_without_fabricating_mixes():
     result=optimize([work('only',10000,60,0,1)],0,20000,120)
     assert len(result['scenarios'])==1
     assert result['scenarios'][0]['counts']==[1]
+
+def test_monthly_service_counts_income_hours_once_and_never_becomes_extra():
+    monthly={**work('monthly',850000,4800,1,0),'type':'Serviço mensal'}
+    payload=dict(works=[monthly,work('consult',10000,60,0,10)],expenses_cents=0,target_cents=1000000,available_minutes=9600)
+    response=client.post('/api/optimizer',json=payload)
+    assert response.status_code==200
+    result=response.json()
+    assert result['projected_cents']==850000
+    assert result['committed_minutes']==4800
+    for row in result['scenarios']+result['overtime_scenarios']:
+        assert row['counts'][0]==0
+        assert all(item['work_id']!='monthly' for item in row['items'])
+    valid_store={'version':1,'months':{'2026-10':{'works':[monthly],'expenses':[],'target':1000000,'available':9600}}}
+    assert client.put('/api/plan',json={'revision':0,'store':valid_store}).status_code==200
+    for invalid in [{**monthly,'quantity':2},{**monthly,'quantity':0},{**monthly,'max_extra':1}]:
+        assert client.post('/api/optimizer',json={**payload,'works':[invalid]}).status_code==422
+        store={'version':1,'months':{'2026-10':{'works':[invalid],'expenses':[],'target':1000000,'available':9600}}}
+        assert client.put('/api/plan',json={'revision':0,'store':store}).status_code==422

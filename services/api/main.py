@@ -27,6 +27,8 @@ class Work(BaseModel):
 
     @model_validator(mode='after')
     def validate_estimated_tax(self):
+        if self.type=='Serviço mensal' and (self.quantity!=1 or self.max_extra!=0):
+            raise ValueError('Serviço mensal deve contar uma vez no mês e não permite unidades extras.')
         if self.gross_cents is None and self.tax_regime is None:
             return self  # Preserve legacy amounts already entered as net.
         if self.gross_cents is None or self.tax_regime is None:
