@@ -1,6 +1,8 @@
 """Bounded API requests and persistent abuse budgets behind the private proxy."""
 import asyncio
 import hashlib
+import hmac
+import re
 import ipaddress
 import os
 import time
@@ -13,9 +15,18 @@ def limits_enabled():
     return os.environ.get('RATE_LIMIT_ENABLED',os.environ.get('SESSION_COOKIE_SECURE','false')).lower()=='true'
 
 
+def proxy_token_configured():
+    return bool(re.fullmatch(r'[A-Za-z0-9_-]{43,128}',os.environ.get('INTERNAL_PROXY_TOKEN','')))
+
+def proxy_token_valid(scope):
+    if not proxy_token_configured():return False
+    supplied=dict(scope['headers']).get(b'x-financemed-proxy-token',b'')
+    expected=os.environ['INTERNAL_PROXY_TOKEN'].encode()
+    return hmac.compare_digest(supplied,expected)
+
 def client_identity(scope):
     peer=(scope.get('client') or ('unknown',0))[0]
-    if os.environ.get('TRUST_PROXY_CLIENT_IP','false').lower()=='true':
+    if os.environ.get('TRUST_PROXY_CLIENT_IP','false').lower()=='true' and proxy_token_valid(scope):
         value=dict(scope['headers']).get(b'x-financemed-client-ip',b'').decode('latin1')
         try:
             address=ipaddress.ip_address(value)
@@ -60,6 +71,13 @@ class ApiSecurity:
             if message['type']=='http.response.start':
                 message={**message,'headers':[(key,value) for key,value in message.get('headers',[]) if key.lower()!=b'cache-control']+[(b'cache-control',b'no-store'),(b'x-content-type-options',b'nosniff')]}
             await send(message)
+
+        if not (scope['method']=='GET' and scope['path']=='/api/health'):
+            try:
+                from accounts import check_proxy_transport
+                check_proxy_transport(Request(scope))
+            except HTTPException as error:
+                return await JSONResponse({'detail':error.detail},status_code=error.status_code,headers=error.headers)(scope,receive,safe_send)
 
         if scope['method'] in ('POST','PUT','PATCH','DELETE'):
             try:

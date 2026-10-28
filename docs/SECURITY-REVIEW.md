@@ -1,6 +1,6 @@
 # Revisão local de segurança
 
-Foram revisados autenticação, sessões, recuperação de senha, acesso a planejamentos, permissões administrativas, proxies, dependências e configuração Docker. As correções estão no repositório e só passam a valer na EC2 após a atualização. Não há garantia de ausência de vulnerabilidades; esta revisão não substitui um teste de invasão independente nem uma auditoria da conta AWS.
+Foram revisados autenticação, sessões, recuperação de senha, acesso a planejamentos, permissões administrativas, proxies, dependências e configuração Docker. As correções estão no repositório e só passam a valer na EC2 após a atualização. A revisão complementar dos oito pontos está em [SECURITY-FOLLOWUP.md](SECURITY-FOLLOWUP.md). Não há garantia de ausência de vulnerabilidades; esta revisão não substitui um teste de invasão independente nem uma auditoria da conta AWS.
 
 ## Correções
 
@@ -26,7 +26,7 @@ As atualizações de ferramentas móveis usam `overrides` explícitos no package
 | Operação | Limite |
 | --- | --- |
 | Cadastro | 20 solicitações por cliente / 15 minutos |
-| Login | 60 por cliente / 5 minutos, além do bloqueio existente de oito falhas por usuário / 15 minutos |
+| Login | 60 por cliente / 5 minutos, além de oito falhas por par usuário + cliente / 15 minutos |
 | Solicitar recuperação | 10 por cliente / 15 minutos, além de cinco por endereço / 15 minutos |
 | Enviar confirmação de e-mail | Cinco por endereço / 15 minutos, compartilhadas entre contas |
 | Otimizar | 30 por cliente / minuto e 20 por usuário / minuto; máximo de dois cálculos simultâneos por processo |
@@ -34,7 +34,7 @@ As atualizações de ferramentas móveis usam `overrides` explícitos no package
 
 São janelas fixas com contadores temporários e chaves derivadas do IP por SHA-256; IPv6 é agrupado por /64. Usuários atrás do mesmo NAT compartilham o limite de cliente. A API de desenvolvimento desativa esses limites por padrão; os testes os ativam explicitamente quando necessário. O compose de produção ativa os limites. Eles reduzem abuso básico, mas não são proteção completa contra ataques distribuídos.
 
-**API e web não podem ter as portas 8000/3000 publicadas.** A confiança no cabeçalho de cliente depende da rede privada e do Caddy sobrescrevendo o valor. A única entrada pública prevista no compose é o Caddy nas portas 80/443. Não remova a substituição dos cabeçalhos nem exponha os serviços internos diretamente.
+**API e web não podem ter as portas 8000/3000 publicadas.** A confiança no cabeçalho de cliente depende da rede privada e do Caddy sobrescrevendo o valor. A única entrada pública prevista no compose é o Caddy nas portas 80/443. A API e os proxies agora também validam uma credencial interna gerada no servidor, sem confiar apenas no IP ou no x-forwarded-proto. Não remova a substituição dos cabeçalhos nem exponha os serviços internos diretamente.
 
 ## Verificações realizadas
 
@@ -44,7 +44,7 @@ São janelas fixas com contadores temporários e chaves derivadas do IP por SHA-
 - `npm audit` completo: zero avisos conhecidos após as correções, incluindo ferramentas de desenvolvimento. A verificação anterior tinha sete pacotes sinalizados; a parte de produção JavaScript já não tinha avisos conhecidos.
 - `pip-audit`: zero avisos conhecidos nas versões Python fixadas após a atualização. O aviso anterior era da ferramenta de testes, não evidência de invasão remota do app.
 - Bandit: sem alertas pendentes. As buscas administrativas passaram a usar SQL fixo parametrizado. O lote de limpeza de contas mantém apenas placeholders SQL gerados internamente, com os identificadores sempre vinculados por parâmetro; a exceção B608 está justificada localmente e coberta por teste com um identificador malicioso. Não há desativação global da regra.
-- Nenhum padrão de chave privada ou chave de acesso AWS foi encontrado nos arquivos rastreados examinados. Isso não representa auditoria do histórico Git, do seu computador ou dos segredos na AWS.
+- Nenhum padrão de chave privada ou chave de acesso AWS foi encontrado nos arquivos rastreados examinados. A revisão inicial não cobriu o histórico; a checagem complementar descrita no relatório seguinte cobriu os 29 commits acessíveis nesta cópia, sem identificar credencial real pelos padrões examinados. O computador do usuário e os segredos na AWS não foram auditados.
 - Instalação completa em três containers locais isolados, com dados fictícios, TLS do Caddy, cookies Secure/HttpOnly/SameSite, planejamento privado, negação a acesso administrativo e limites preservados mesmo tentando falsificar IPs nos cabeçalhos.
 - Login e gravação de meta no navegador através do HTTPS local, com a aplicação somente para leitura. Banco com permissão 0600, processos API/web sem root e sem elevação de privilégio foram conferidos. Nenhuma biblioteca de teste ficou instalada na imagem da API.
 
@@ -64,6 +64,7 @@ Na EC2, após revisar as mudanças:
 
 ```bash
 cd ~/AppMed
+git pull --ff-only origin main
 bash scripts/update-server.sh
 ```
 

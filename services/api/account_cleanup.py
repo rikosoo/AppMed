@@ -28,6 +28,7 @@ def purge_account(db,user_id):
     db.execute('DELETE FROM usage_daily WHERE user_id=?',(user_id,))
     db.execute('DELETE FROM admin_audit WHERE actor_id=? OR subject_id=?',(user_id,user_id))
     db.execute('DELETE FROM login_failures WHERE username=?',(row['username'],))
+    db.execute('DELETE FROM login_client_failures WHERE username=?',(row['username'],))
     db.execute('DELETE FROM users WHERE id=?',(user_id,))
 
 def enforce_deletions(db,path):

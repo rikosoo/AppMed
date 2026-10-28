@@ -25,6 +25,8 @@ CREATE TABLE IF NOT EXISTS sessions (token_hash TEXT PRIMARY KEY, user_id TEXT N
 CREATE INDEX IF NOT EXISTS session_user ON sessions(user_id);
 CREATE TABLE IF NOT EXISTS plans (user_id TEXT PRIMARY KEY REFERENCES users(id), document TEXT NOT NULL, revision INTEGER NOT NULL DEFAULT 0);
 CREATE TABLE IF NOT EXISTS login_failures (username TEXT NOT NULL, attempted_at INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS login_client_failures (username TEXT NOT NULL,client_hash TEXT NOT NULL,attempted_at INTEGER NOT NULL);
+CREATE INDEX IF NOT EXISTS client_failures_name ON login_client_failures(username,client_hash,attempted_at);
 CREATE INDEX IF NOT EXISTS failures_name ON login_failures(username,attempted_at);
 '''
 
@@ -105,7 +107,7 @@ def normalize_username(value):
 def check_origin(request:Request):
     allowed={value.strip().rstrip('/') for value in os.environ.get('APP_ALLOWED_ORIGINS','http://localhost:3000,http://127.0.0.1:3000').split(',')}
     origin=request.headers.get('origin')
-    if not origin and request.headers.get('sec-fetch-site') in ('same-site','cross-site'):
+    if not origin and (secure_cookie() or request.headers.get('sec-fetch-site') in ('same-site','cross-site')):
         raise HTTPException(403,'Origem não autorizada para esta operação.')
     if origin and origin.rstrip('/') not in allowed:
         raise HTTPException(403,'Origem não autorizada para esta operação.')
@@ -113,10 +115,17 @@ def check_origin(request:Request):
 def secure_cookie():
     return os.environ.get('SESSION_COOKIE_SECURE','false').lower()=='true'
 
+def check_proxy_transport(request):
+    if not secure_cookie():return
+    from security import proxy_token_configured, proxy_token_valid
+    if not proxy_token_configured():
+        raise HTTPException(503,'A comunicação interna do servidor ainda não foi configurada.')
+    if not proxy_token_valid(request.scope) or request.headers.get('x-forwarded-proto')!='https':
+        raise HTTPException(403,'Acesse o aplicativo pelo endereço HTTPS configurado.')
+
 def check_auth_transport(request):
     check_origin(request)
-    if secure_cookie() and request.headers.get('x-forwarded-proto')!='https':
-        raise HTTPException(403,'Use o endereço HTTPS do aplicativo para criar uma conta ou entrar.')
+    check_proxy_transport(request)
 
 def require_user(request:Request):
     raw=request.cookies.get(COOKIE,'')
@@ -181,19 +190,21 @@ def register(data:Registration,request:Request,response:Response,tasks:Backgroun
 def login(data:Credentials,request:Request,response:Response):
     check_auth_transport(request)
     username=normalize_username(data.username)
+    from security import client_identity
+    client_hash=hashlib.sha256(client_identity(request.scope).encode()).hexdigest()
     now=int(time.time())
     with connect() as db:
-        db.execute('DELETE FROM login_failures WHERE attempted_at<?',(now-900,))
-        count=db.execute('SELECT COUNT(*) FROM login_failures WHERE username=? AND attempted_at>?',(username,now-900)).fetchone()[0]
+        db.execute('DELETE FROM login_client_failures WHERE attempted_at<?',(now-900,))
+        count=db.execute('SELECT COUNT(*) FROM login_client_failures WHERE username=? AND client_hash=? AND attempted_at>?',(username,client_hash,now-900)).fetchone()[0]
         if count>=8:
             raise HTTPException(429,'Muitas tentativas. Aguarde 15 minutos antes de tentar novamente.',headers={'Retry-After':'900'})
         user=db.execute('SELECT id,username,password_hash,status,role FROM users WHERE username=?',(username,)).fetchone()
         matches=password_matches(data.password,user['password_hash'] if user else DUMMY_HASH)
         if not user or not matches or user['status']!='active':
-            db.execute('INSERT INTO login_failures VALUES (?,?)',(username,now))
+            db.execute('INSERT INTO login_client_failures VALUES (?,?,?)',(username,client_hash,now))
             db.commit()
             raise HTTPException(401,'Usuário ou senha incorretos. Confira e tente novamente.')
-        db.execute('DELETE FROM login_failures WHERE username=?',(username,))
+        db.execute('DELETE FROM login_client_failures WHERE username=? AND client_hash=?',(username,client_hash))
         if not user['password_hash'].startswith('scrypt$v2$'):
             db.execute('UPDATE users SET password_hash=? WHERE id=?',(password_hash(data.password),user['id']))
         issue_session(response,user['id'],db)
@@ -287,6 +298,7 @@ def update_account(data:UpdateAccount,request:Request,response:Response,user=Dep
         except sqlite3.IntegrityError:
             raise HTTPException(409,'Este nome de usuário já está em uso. Escolha outro.')
         db.execute('DELETE FROM login_failures WHERE username IN (?,?)',(row['username'],updated_username))
+        db.execute('DELETE FROM login_client_failures WHERE username IN (?,?)',(row['username'],updated_username))
         db.execute('DELETE FROM sessions WHERE user_id=?',(user['id'],))
         issue_session(response,user['id'],db)
     return {'user':{'id':user['id'],'username':updated_username,'role':row['role']}}

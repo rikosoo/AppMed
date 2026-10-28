@@ -70,11 +70,14 @@ APP_ORIGIN=https://finance.seudominio.com.br
 
 Use somente o nome do domínio em APP_DOMAIN e a origem HTTPS em APP_ORIGIN, sem /admin. O login próprio do FinanceMed substitui a janela externa de senha do Caddy; as variáveis BASIC_AUTH antigas não são mais utilizadas. No Nano, Ctrl+O e Enter salvam, Ctrl+X sai.
 
+A credencial `INTERNAL_PROXY_TOKEN` é criada pelo comando abaixo, fica somente no servidor e é compartilhada pelos três serviços. O valor não é exibido, não deve ser commitado e não é uma senha adicional para os usuários.
+
 ## 5. Compilar e iniciar
 
 Na pasta `~/AppMed`:
 
 ```bash
+python3 scripts/configure-proxy-token.py deploy/.env
 sudo docker compose --env-file deploy/.env -f deploy/compose.prod.yml config --quiet
 sudo docker compose --env-file deploy/.env -f deploy/compose.prod.yml build
 sudo docker compose --env-file deploy/.env -f deploy/compose.prod.yml up -d --wait --wait-timeout 180
@@ -101,8 +104,11 @@ As alterações feitas pelo Codex precisam estar enviadas à branch `main`. Entr
 
 ```bash
 cd ~/AppMed
+git pull --ff-only origin main
 bash scripts/update-server.sh
 ```
+
+O `git pull` inicial garante que esta primeira atualização já execute o script que configura a credencial interna. Se houver conflito ou alteração local, preserve-a e resolva antes de continuar.
 
 Esse script:
 
@@ -121,6 +127,7 @@ Depois, abra o site, atualize a página e teste o fluxo alterado. Manter o mesmo
 ```bash
 cd ~/AppMed
 git pull --ff-only origin main
+python3 scripts/configure-proxy-token.py deploy/.env
 sudo docker compose --env-file deploy/.env -f deploy/compose.prod.yml build
 sudo docker compose --env-file deploy/.env -f deploy/compose.prod.yml up -d --wait --wait-timeout 180
 ```

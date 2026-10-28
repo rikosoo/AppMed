@@ -22,7 +22,7 @@ O iniciador procura o Python (incluindo `py -3` no Windows), cria `.venv` se ela
 ```powershell
 npm ci
 python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r services/api/requirements.lock
+.\.venv\Scripts\python.exe -m pip install --require-hashes -r services/api/requirements.lock
 npm run dev
 ```
 
@@ -31,7 +31,7 @@ npm run dev
 ```bash
 npm ci
 python -m venv .venv
-.venv/bin/pip install -r services/api/requirements.lock
+.venv/bin/pip install --require-hashes -r services/api/requirements.lock
 npm run dev
 ```
 

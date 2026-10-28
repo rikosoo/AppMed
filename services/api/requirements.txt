@@ -1,4 +1,3 @@
-fastapi==0.135.1
-uvicorn==0.41.0
-pytest==9.0.2
-httpx==0.28.1
+# Developer installation uses the same pinned, hash-checked dependency set.
+--require-hashes
+-r requirements.lock

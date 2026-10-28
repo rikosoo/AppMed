@@ -29,7 +29,7 @@ function preparePython() {
   if (probe.status !== 0) {
     if (probe.error) fail('O Python em .venv não pode ser executado. Recrie o ambiente nesta máquina; ambientes virtuais copiados de outra pasta ou sistema podem não funcionar.');
     console.log('[FinanceMed] Instalando as dependências da API…');
-    const installed = command(python,['-m','pip','install','-r','services/api/requirements.lock'],{stdio:'inherit',timeout:600000});
+    const installed = command(python,['-m','pip','install','--require-hashes','-r','services/api/requirements.lock'],{stdio:'inherit',timeout:600000});
     if (installed.status !== 0) fail('A instalação da API falhou. Confira o erro acima e a conexão de rede. Depois execute npm run dev novamente.');
     const retry = command(python,['-c','import uvicorn, fastapi; from engine import ENGINE_VERSION'],{cwd:path.join(root,'services/api')});
     if (retry.status !== 0) fail('A API ainda não consegue carregar suas dependências. Confira o README para reinstalar o ambiente Python.');

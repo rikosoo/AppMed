@@ -5,6 +5,7 @@
     }
     header Strict-Transport-Security "max-age=31536000"
     reverse_proxy web:3000 {
+        header_up X-FinanceMed-Proxy-Token {$INTERNAL_PROXY_TOKEN}
         header_up X-FinanceMed-Client-IP {remote_host}
         header_up X-Forwarded-Proto {scheme}
     }

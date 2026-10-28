@@ -1,4 +1,4 @@
-import {limitedBody,BodyLimitError,upstreamHeaders} from '@/lib/proxy-security';
+import {limitedBody,BodyLimitError,upstreamHeaders,ProxyAccessError} from '@/lib/proxy-security';
 const unavailable = 'O motor de cálculo está indisponível. Na pasta do projeto, execute npm run dev para iniciar a interface e a API, ou confira o terminal da API na porta 8000.';
 export async function POST(request: Request) {
   let payload: unknown;
@@ -22,5 +22,5 @@ export async function POST(request: Request) {
       return Response.json({ detail: 'A resposta do motor está incompleta. Atualize o projeto e reinicie a API.' }, { status: 502 });
     }
     return Response.json(data,{headers:responseHeaders});
-  } catch { return Response.json({ detail: unavailable }, { status: 503 }); }
+  } catch(error) { if(error instanceof ProxyAccessError)return Response.json({detail:error.message},{status:error.status,headers:{'Cache-Control':'no-store'}});return Response.json({ detail: unavailable }, { status: 503 }); }
 }

@@ -2,6 +2,7 @@ name: financemed
 services:
   api:
     environment:
+      INTERNAL_PROXY_TOKEN: ${INTERNAL_PROXY_TOKEN:?Execute python3 scripts/configure-proxy-token.py deploy/.env}
       NO_PROXY: "127.0.0.1,localhost,::1,api,web"
       no_proxy: "127.0.0.1,localhost,::1,api,web"
       DATABASE_PATH: /data/financemed.sqlite3
@@ -44,6 +45,7 @@ services:
       dockerfile: deploy/Dockerfile.web
     restart: unless-stopped
     environment:
+      INTERNAL_PROXY_TOKEN: ${INTERNAL_PROXY_TOKEN:?Execute python3 scripts/configure-proxy-token.py deploy/.env}
       NO_PROXY: "127.0.0.1,localhost,::1,api,web"
       no_proxy: "127.0.0.1,localhost,::1,api,web"
       API_URL: http://api:8000
@@ -77,6 +79,7 @@ services:
       - "${BIND_ADDRESS:-0.0.0.0}:${HTTP_PORT:-80}:80"
       - "${BIND_ADDRESS:-0.0.0.0}:${HTTPS_PORT:-443}:443"
     environment:
+      INTERNAL_PROXY_TOKEN: ${INTERNAL_PROXY_TOKEN:?Execute python3 scripts/configure-proxy-token.py deploy/.env}
       NO_PROXY: "127.0.0.1,localhost,::1,api,web"
       no_proxy: "127.0.0.1,localhost,::1,api,web"
       APP_DOMAIN: ${APP_DOMAIN:?Defina APP_DOMAIN em deploy/.env}

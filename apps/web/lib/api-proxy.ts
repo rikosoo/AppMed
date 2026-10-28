@@ -1,11 +1,12 @@
-import {limitedBody,BodyLimitError,upstreamHeaders} from '@/lib/proxy-security';
+import {limitedBody,BodyLimitError,upstreamHeaders,ProxyAccessError} from '@/lib/proxy-security';
 export async function proxyApi(request:Request,path:string,method=request.method) {
  const limit=path.startsWith('/api/auth/')?10000:2_000_000;
  let body:string|undefined;
  if(!['GET','HEAD'].includes(method)){
   try{body=await limitedBody(request,limit);}catch(error){if(error instanceof BodyLimitError)return Response.json({detail:'Os dados enviados excedem o limite de tamanho.'},{status:413,headers:{'Cache-Control':'no-store'}});throw error;}
  }
- const headers=upstreamHeaders(request);
+ let headers:Record<string,string>;
+ try{headers=upstreamHeaders(request);}catch(error){if(error instanceof ProxyAccessError)return Response.json({detail:error.message},{status:error.status,headers:{'Cache-Control':'no-store'}});throw error;}
  try{
   const upstream=await fetch(`${process.env.API_URL||'http://127.0.0.1:8000'}${path}`,{method,headers,body,cache:'no-store',signal:AbortSignal.timeout(20000)});
   const responseHeaders=new Headers({'Cache-Control':'no-store'});

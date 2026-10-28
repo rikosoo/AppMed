@@ -40,6 +40,8 @@ def test_reset_preserves_plan_revokes_all_devices_and_rejects_replay(setup):
     uid=client.get('/api/auth/me').json()['user']['id']
     with connect() as db:db.execute('INSERT INTO plans VALUES (?,?,?)',(uid,'{"version":1,"months":{}}',7))
     before=client.get('/api/plan').json()
+    with connect() as db:
+        db.executemany('INSERT INTO login_client_failures VALUES (?,?,?)',[('doctor',hashlib.sha256(b'testclient').hexdigest(),int(time.time()))]*8)
     assert client.post('/api/auth/forgot-password',json={'email':'doctor@example.com'}).status_code==200
     token=sent[-1][2]
     assert client.post('/api/auth/reset-password',json={'token':token,'new_password':'short'}).status_code==422

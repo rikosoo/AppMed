@@ -137,5 +137,6 @@ def reset_password(data:ResetPassword,request:Request,response:Response):
         db.execute('DELETE FROM sessions WHERE user_id=?',(row['user_id'],))
         db.execute('DELETE FROM recovery_tokens WHERE user_id=?',(row['user_id'],))
         db.execute('DELETE FROM login_failures WHERE username=(SELECT username FROM users WHERE id=?)',(row['user_id'],))
+        db.execute('DELETE FROM login_client_failures WHERE username=(SELECT username FROM users WHERE id=?)',(row['user_id'],))
     response.delete_cookie(COOKIE,path='/',secure=os.environ.get('SESSION_COOKIE_SECURE','false').lower()=='true',httponly=True,samesite='lax');response.headers['Cache-Control']='no-store'
     return {'message':'Senha alterada. Entre novamente com seu usuário e a nova senha.'}

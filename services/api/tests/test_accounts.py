@@ -78,10 +78,10 @@ def test_foreign_origins_cannot_register_login_logout_or_write_plans():
     assert client.post('/api/auth/login',json={'username':'doctor','password':PASSWORD},headers=headers).status_code==403
 
 def test_production_requires_https_and_sets_secure_cookie(monkeypatch):
-    monkeypatch.setenv('SESSION_COOKIE_SECURE','true');monkeypatch.setenv('APP_ALLOWED_ORIGINS','https://finance.example')
+    monkeypatch.setenv('SESSION_COOKIE_SECURE','true');monkeypatch.setenv('APP_ALLOWED_ORIGINS','https://finance.example');monkeypatch.setenv('INTERNAL_PROXY_TOKEN','test-proxy-token-'+'A'*48)
     client=TestClient(app,base_url='https://finance.example')
     assert client.post('/api/auth/register',json={'username':'doctor','password':PASSWORD}).status_code==403
-    response=client.post('/api/auth/register',json={'username':'doctor','password':PASSWORD},headers={'x-forwarded-proto':'https','origin':'https://finance.example'})
+    response=client.post('/api/auth/register',json={'username':'doctor','password':PASSWORD},headers={'x-forwarded-proto':'https','origin':'https://finance.example','x-financemed-proxy-token':'test-proxy-token-'+'A'*48})
     assert response.status_code==201 and 'Secure' in response.headers['set-cookie']
 
 def test_failed_login_attempts_are_rate_limited():

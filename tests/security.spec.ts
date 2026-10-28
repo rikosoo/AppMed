@@ -20,3 +20,13 @@ test('untrusted work names remain plain text and another account cannot read the
  const username=`other-${crypto.randomUUID()}`;expect((await request.post('/api/auth/register',{data:{username,password:'Other-security-account-123!'}})).status()).toBe(201);
  const own=await (await request.get('/api/plan')).json();expect(own.store.months).toEqual({});
 });
+
+
+test('unlisted API paths fail closed while health is deliberately public and minimal',async({request})=>{
+ for(const path of ['/api/docs','/api/openapi.json','/api/not-registered','/api/auth/not-registered','/api/admin/not-registered']){
+  expect((await request.get(path)).status()).toBe(404);
+  expect([404,405]).toContain((await request.post(path,{data:{}})).status());
+ }
+ const health=await request.get('/api/health');expect(health.status()).toBe(200);expect(await health.json()).toEqual({status:'ok'});
+ expect((await request.get('/api/plan')).status()).toBe(401);
+});

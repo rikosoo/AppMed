@@ -73,12 +73,15 @@ def test_optimizer_user_budget_survives_new_session_and_recovers_after_window(mo
 
 
 def test_trusted_proxy_normalizes_ip_and_groups_ipv6_clients(monkeypatch):
+    token='test-proxy-token-'+'A'*48
     scope={'client':('10.0.0.2',1),'headers':[(b'x-financemed-client-ip',b'192.0.2.1')]}
+    monkeypatch.setenv('INTERNAL_PROXY_TOKEN',token)
     monkeypatch.delenv('TRUST_PROXY_CLIENT_IP',raising=False);assert client_identity(scope)=='10.0.0.2'
-    monkeypatch.setenv('TRUST_PROXY_CLIENT_IP','true');assert client_identity(scope)=='192.0.2.1'
-    scope['headers']=[(b'x-financemed-client-ip',b'not-an-ip')];assert client_identity(scope)=='10.0.0.2'
-    scope['headers']=[(b'x-financemed-client-ip',b'2001:db8::1')];assert client_identity(scope)=='2001:db8::/64'
-    scope['headers']=[(b'x-financemed-client-ip',b'2001:db8::abcd')];assert client_identity(scope)=='2001:db8::/64'
+    monkeypatch.setenv('TRUST_PROXY_CLIENT_IP','true');assert client_identity(scope)=='10.0.0.2'
+    scope['headers'].append((b'x-financemed-proxy-token',token.encode()));assert client_identity(scope)=='192.0.2.1'
+    scope['headers']=[(b'x-financemed-client-ip',b'not-an-ip'),(b'x-financemed-proxy-token',token.encode())];assert client_identity(scope)=='10.0.0.2'
+    scope['headers']=[(b'x-financemed-client-ip',b'2001:db8::1'),(b'x-financemed-proxy-token',token.encode())];assert client_identity(scope)=='2001:db8::/64'
+    scope['headers']=[(b'x-financemed-client-ip',b'2001:db8::abcd'),(b'x-financemed-proxy-token',token.encode())];assert client_identity(scope)=='2001:db8::/64'
 
 
 def test_revoked_session_cannot_finish_a_pending_plan_write():
@@ -125,3 +128,33 @@ def test_admin_search_and_deletion_ledger_treat_sql_fragments_as_values():
     record_deletion(database_path(),"'); DROP TABLE users; --")
     with connect() as db:
         assert db.execute('SELECT id FROM users').fetchone()[0]==uid
+
+def test_login_lock_is_scoped_to_user_and_authenticated_client_not_global(monkeypatch):
+    client=account();token='test-proxy-token-'+'A'*48
+    monkeypatch.setenv('INTERNAL_PROXY_TOKEN',token);monkeypatch.setenv('TRUST_PROXY_CLIENT_IP','true')
+    attacker={'X-FinanceMed-Client-IP':'192.0.2.1','X-FinanceMed-Proxy-Token':token}
+    owner={'X-FinanceMed-Client-IP':'192.0.2.2','X-FinanceMed-Proxy-Token':token}
+    for _ in range(8):assert client.post('/api/auth/login',json={'username':'doctor','password':'wrong'},headers=attacker).status_code==401
+    assert client.post('/api/auth/login',json={'username':'doctor','password':PASSWORD},headers=attacker).status_code==429
+    assert client.post('/api/auth/login',json={'username':'doctor','password':PASSWORD},headers=owner).status_code==200
+    with connect() as db:
+        assert db.execute('SELECT COUNT(*) FROM login_failures WHERE username=?',('doctor',)).fetchone()[0]==0
+        assert db.execute('SELECT COUNT(*) FROM login_client_failures WHERE username=?',('doctor',)).fetchone()[0]==8
+
+
+def test_production_requires_private_proxy_and_origin_even_without_browser_metadata(monkeypatch):
+    token='test-proxy-token-'+'A'*48
+    monkeypatch.setenv('SESSION_COOKIE_SECURE','true');monkeypatch.setenv('APP_ALLOWED_ORIGINS','https://finance.example');monkeypatch.setenv('INTERNAL_PROXY_TOKEN',token)
+    client=TestClient(main.app,base_url='https://finance.example')
+    body={'username':'production-doctor','password':PASSWORD}
+    forged={'X-Forwarded-Proto':'https','Origin':'https://finance.example'}
+    assert client.post('/api/auth/register',json=body,headers=forged).status_code==403
+    headers={**forged,'X-FinanceMed-Proxy-Token':token}
+    assert client.post('/api/auth/register',json=body,headers={k:v for k,v in headers.items() if k!='Origin'}).status_code==403
+    assert client.post('/api/auth/register',json=body,headers=headers).status_code==201
+    payload={'works':[],'expenses_cents':0,'target_cents':10000,'available_minutes':60}
+    assert client.post('/api/optimizer',json=payload,headers={k:v for k,v in headers.items() if k!='Origin'}).status_code==403
+    assert client.post('/api/optimizer',json=payload,headers=headers).status_code==200
+    assert client.get('/api/auth/me',headers=forged).status_code==403
+    assert client.get('/api/auth/me',headers=headers).status_code==200
+    assert client.get('/api/health').status_code==200

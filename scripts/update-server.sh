@@ -13,6 +13,7 @@ if [[ "$(git symbolic-ref --short -q HEAD || true)" != "main" ]]; then
   echo "A atualização espera a branch main. Após um rollback, execute git switch main primeiro."
   exit 1
 fi
+python3 scripts/configure-proxy-token.py deploy/.env
 # Copy the live SQLite database consistently before replacing the API image.
 # The first upgrade from the demo version has no database yet.
 api_container="$(sudo docker compose --env-file deploy/.env -f deploy/compose.prod.yml ps --status running -q api)"
@@ -36,6 +37,7 @@ fi
 previous_commit="$(git rev-parse HEAD)"
 echo "Versão anterior (guarde para rollback): $previous_commit"
 git pull --ff-only origin main
+python3 scripts/configure-proxy-token.py deploy/.env
 sudo docker compose --env-file deploy/.env -f deploy/compose.prod.yml config --quiet
 # Build first: a compilation failure keeps the currently running containers intact.
 sudo docker compose --env-file deploy/.env -f deploy/compose.prod.yml build --pull
