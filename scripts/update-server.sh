@@ -38,7 +38,7 @@ echo "Versão anterior (guarde para rollback): $previous_commit"
 git pull --ff-only origin main
 sudo docker compose --env-file deploy/.env -f deploy/compose.prod.yml config --quiet
 # Build first: a compilation failure keeps the currently running containers intact.
-sudo docker compose --env-file deploy/.env -f deploy/compose.prod.yml build
+sudo docker compose --env-file deploy/.env -f deploy/compose.prod.yml build --pull
 sudo docker compose --env-file deploy/.env -f deploy/compose.prod.yml up -d --wait --wait-timeout 180
 sudo docker compose --env-file deploy/.env -f deploy/compose.prod.yml ps
 echo "Atualizado para $(git rev-parse --short HEAD). Confira o site no navegador."

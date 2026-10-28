@@ -94,6 +94,7 @@ def set_email(data:SetEmail,request:Request,response:Response,tasks:BackgroundTa
         row=db.execute('SELECT id,password_hash,status FROM users WHERE id=?',(user['id'],)).fetchone()
         if not row or row['status']!='active':raise HTTPException(401,'Entre novamente.')
         if not password_matches(data.current_password,row['password_hash']):db.commit();raise HTTPException(401,'Senha atual incorreta. Nenhum dado foi alterado.')
+        if limited(db,'verify-email:'+email):db.commit();raise HTTPException(429,'Aguarde 15 minutos antes de solicitar outro e-mail.')
         token=issue_token(db,row,'verify',email)
     tasks.add_task(deliver_email,email,'verify',token);response.headers['Cache-Control']='no-store'
     return {'message':'Enviamos um link para confirmar o e-mail. O endereço só será usado para recuperação após a confirmação.'}

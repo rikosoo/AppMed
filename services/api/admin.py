@@ -54,12 +54,10 @@ def metrics(response:Response,user=Depends(require_admin)):
 
 @router.get('/users')
 def users(response:Response,limit:int=Query(50,ge=1,le=100),offset:int=Query(0,ge=0),q:str=Query('',max_length=80),status:Literal['active','blocked']|None=None,user=Depends(require_admin)):
-    where="WHERE instr(username,?)>0"; params=[q.strip().casefold()]
-    if status:
-        where+=' AND status=?';params.append(status)
+    search=(q.strip().casefold(),status,status)
     with connect() as db:
-        rows=db.execute(f'SELECT id,username,role,status,created_at,last_login_at,last_active_at FROM users {where} ORDER BY created_at DESC,id LIMIT ? OFFSET ?',(*params,limit,offset)).fetchall()
-        total=db.execute(f'SELECT COUNT(*) FROM users {where}',params).fetchone()[0]
+        rows=db.execute('SELECT id,username,role,status,created_at,last_login_at,last_active_at FROM users WHERE instr(username,?)>0 AND (? IS NULL OR status=?) ORDER BY created_at DESC,id LIMIT ? OFFSET ?',(*search,limit,offset)).fetchall()
+        total=db.execute('SELECT COUNT(*) FROM users WHERE instr(username,?)>0 AND (? IS NULL OR status=?)',search).fetchone()[0]
     response.headers['Cache-Control']='no-store'
     return {'users':[dict(row) for row in rows],'total':total,'limit':limit,'offset':offset}
 

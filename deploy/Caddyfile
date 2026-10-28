@@ -1,6 +1,13 @@
 {$APP_DOMAIN} {
     encode zstd gzip
-    reverse_proxy web:3000
+    request_body {
+        max_size 2MB
+    }
+    header Strict-Transport-Security "max-age=31536000"
+    reverse_proxy web:3000 {
+        header_up X-FinanceMed-Client-IP {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
 }
 
 http:// {

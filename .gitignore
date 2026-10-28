@@ -32,3 +32,13 @@ apps/mobile/ios/**/DerivedData/
 *.keystore
 *.p12
 *.mobileprovision
+
+# Private credentials and signing material
+**/*.pem
+**/*.key
+**/*.pfx
+**/*.p12
+**/*.jks
+**/*.keystore
+**/.aws/
+**/.ssh/

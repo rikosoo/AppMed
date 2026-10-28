@@ -2,13 +2,25 @@ from fastapi import FastAPI, HTTPException, Depends, Request, Response
 from pydantic import BaseModel, Field, ConfigDict, model_validator
 from typing import Literal, Any
 import json
-from accounts import router as accounts_router, require_user, check_origin, connect
+import os
+from threading import BoundedSemaphore
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from security import ApiSecurity, limits_enabled, consume_budget
+from accounts import router as accounts_router, require_user, check_origin, connect, require_current_session
 from recovery import router as recovery_router
 from admin import router as admin_router, record_event
 from finance import after_tax
 from engine import ENGINE_VERSION, MAX_MONTHLY_MINUTES, optimize
 
-app = FastAPI(title='FinanceMed AI', version='0.2.0')
+production=os.environ.get('SESSION_COOKIE_SECURE','false').lower()=='true'
+app = FastAPI(title='FinanceMed AI', version='0.2.0',docs_url=None if production else '/docs',redoc_url=None if production else '/redoc',openapi_url=None if production else '/openapi.json')
+app.add_middleware(ApiSecurity)
+
+@app.exception_handler(RequestValidationError)
+async def invalid_input(request:Request,error:RequestValidationError):
+    # Pydantic's default output includes submitted passwords and complete financial objects.
+    return JSONResponse({'detail':'Revise os campos informados.'},status_code=422,headers={'Cache-Control':'no-store'})
 app.include_router(accounts_router)
 app.include_router(recovery_router)
 app.include_router(admin_router)
@@ -51,10 +63,15 @@ def health():
         db.execute('SELECT 1')
     return {'status': 'ok', 'engine': ENGINE_VERSION}
 
+_optimizer_slots=BoundedSemaphore(2)
+
 @app.post('/api/optimizer')
 def optimizer(data: OptimizationRequest, user=Depends(require_user)):
+    if limits_enabled():consume_budget('optimizer-user:'+user['id'],20,60)
     if len({w.id for w in data.works}) != len(data.works):
         raise HTTPException(422, 'Cada trabalho deve ter um identificador único.')
+    if not _optimizer_slots.acquire(blocking=False):
+        raise HTTPException(429,'Há outros cálculos em andamento. Tente novamente em instantes.',headers={'Retry-After':'2'})
     try:
         result = optimize([w.model_dump() for w in data.works], data.expenses_cents,
                         data.target_cents, data.available_minutes, data.preference)
@@ -63,6 +80,8 @@ def optimizer(data: OptimizationRequest, user=Depends(require_user)):
         return result
     except ValueError as e:
         raise HTTPException(422, str(e)) from e
+    finally:
+        _optimizer_slots.release()
 
 class Expense(BaseModel):
     id:str=Field(min_length=1,max_length=100)
@@ -106,6 +125,7 @@ def update_plan(data:PlanUpdate,request:Request,response:Response,user=Depends(r
         raise HTTPException(413,'Seu planejamento excede o limite de tamanho. Exporte uma cópia e reduza o histórico salvo.')
     with connect() as db:
         db.execute('BEGIN IMMEDIATE')
+        require_current_session(db,request,user)
         row=db.execute('SELECT revision,document FROM plans WHERE user_id=?',(user['id'],)).fetchone()
         current=row['revision'] if row else 0
         if data.revision!=current:

@@ -2,8 +2,12 @@ name: financemed
 services:
   api:
     environment:
+      NO_PROXY: "127.0.0.1,localhost,::1,api,web"
+      no_proxy: "127.0.0.1,localhost,::1,api,web"
       DATABASE_PATH: /data/financemed.sqlite3
       SESSION_COOKIE_SECURE: "true"
+      RATE_LIMIT_ENABLED: "true"
+      TRUST_PROXY_CLIENT_IP: "true"
       APP_ORIGIN: ${APP_ORIGIN:?Defina APP_ORIGIN}
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
@@ -12,6 +16,11 @@ services:
       SMTP_USERNAME: ${SMTP_USERNAME:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       APP_ALLOWED_ORIGINS: ${APP_ORIGIN:?Defina APP_ORIGIN com https em deploy/.env}
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m,mode=1777
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
     volumes:
       - api_data:/data
     build:
@@ -35,7 +44,16 @@ services:
       dockerfile: deploy/Dockerfile.web
     restart: unless-stopped
     environment:
+      NO_PROXY: "127.0.0.1,localhost,::1,api,web"
+      no_proxy: "127.0.0.1,localhost,::1,api,web"
       API_URL: http://api:8000
+      TRUST_PROXY_CLIENT_IP: "true"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m,mode=1777
+      - /app/apps/web/.next/cache:rw,noexec,nosuid,size=64m,mode=1777
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
     depends_on:
       api:
         condition: service_healthy
@@ -59,6 +77,8 @@ services:
       - "${BIND_ADDRESS:-0.0.0.0}:${HTTP_PORT:-80}:80"
       - "${BIND_ADDRESS:-0.0.0.0}:${HTTPS_PORT:-443}:443"
     environment:
+      NO_PROXY: "127.0.0.1,localhost,::1,api,web"
+      no_proxy: "127.0.0.1,localhost,::1,api,web"
       APP_DOMAIN: ${APP_DOMAIN:?Defina APP_DOMAIN em deploy/.env}
     volumes:
       - caddy_data:/data
@@ -67,7 +87,7 @@ services:
       web:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:2019/config/"]
+      test: ["CMD", "wget", "-Y", "off", "-q", "-O", "/dev/null", "http://127.0.0.1:2019/config/"]
       interval: 10s
       timeout: 5s
       retries: 12

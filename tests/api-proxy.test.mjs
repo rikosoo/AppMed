@@ -2,7 +2,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import ts from 'typescript';
-const source = ts.transpileModule(readFileSync('apps/web/app/api/optimizer/route.ts', 'utf8'), {compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+const helper=ts.transpileModule(readFileSync('apps/web/lib/proxy-security.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+const helperUrl=`data:text/javascript;base64,${Buffer.from(helper).toString('base64')}`;
+const source = ts.transpileModule(readFileSync('apps/web/app/api/optimizer/route.ts', 'utf8'), {compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText.replace("@/lib/proxy-security",helperUrl);
 const { POST } = await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`);
 function request(body='{}'){return new Request('http://localhost/api/optimizer',{method:'POST',headers:{'Content-Type':'application/json'},body});}
 function mockFetch(t, handler){const original=globalThis.fetch;globalThis.fetch=handler;t.after(()=>{globalThis.fetch=original;});}

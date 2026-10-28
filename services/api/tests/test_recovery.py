@@ -122,3 +122,16 @@ def test_registration_optional_email_is_unverified_until_confirmed(setup):
     assert sent[-1][0:2]==('new@example.com','verify')
     assert client.post('/api/auth/confirm-email',json={'token':sent[-1][2]}).status_code==200
     assert client.get('/api/auth/recovery-email').json()=={'email':'new@example.com'}
+
+def test_confirmation_email_budget_is_shared_between_new_accounts_and_settings(setup):
+    client,sent=setup
+    for index in range(4):
+        other=TestClient(app)
+        assert other.post('/api/auth/register',json={'username':f'new-{index}','password':PASSWORD,'email':'target@example.com'}).status_code==201
+    assert client.post('/api/auth/recovery-email',json={'email':'target@example.com','current_password':PASSWORD}).status_code==200
+    assert len(sent)==5
+    other=TestClient(app)
+    assert other.post('/api/auth/register',json={'username':'new-blocked-mail','password':PASSWORD,'email':'target@example.com'}).status_code==201
+    assert len(sent)==5
+    assert client.post('/api/auth/recovery-email',json={'email':'target@example.com','current_password':PASSWORD}).status_code==429
+    assert len(sent)==5

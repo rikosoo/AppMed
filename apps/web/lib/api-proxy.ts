@@ -1,15 +1,11 @@
+import {limitedBody,BodyLimitError,upstreamHeaders} from '@/lib/proxy-security';
 export async function proxyApi(request:Request,path:string,method=request.method) {
  const limit=path.startsWith('/api/auth/')?10000:2_000_000;
  let body:string|undefined;
  if(!['GET','HEAD'].includes(method)){
-  const chunks:Uint8Array[]=[];let size=0;
-  const reader=request.body?.getReader();
-  if(reader){while(true){const {done,value}=await reader.read();if(done)break;size+=value.length;if(size>limit){await reader.cancel();return Response.json({detail:'Os dados enviados excedem o limite de tamanho.'},{status:413});}chunks.push(value);}}
-  const bytes=new Uint8Array(size);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length;}body=new TextDecoder().decode(bytes);
+  try{body=await limitedBody(request,limit);}catch(error){if(error instanceof BodyLimitError)return Response.json({detail:'Os dados enviados excedem o limite de tamanho.'},{status:413,headers:{'Cache-Control':'no-store'}});throw error;}
  }
- const headers:Record<string,string>={'Content-Type':'application/json'};
- for(const name of ['cookie','origin','x-financemed-account']){const value=request.headers.get(name);if(value)headers[name]=value;}
- headers['x-forwarded-proto']=request.headers.get('x-forwarded-proto')||new URL(request.url).protocol.replace(':','');
+ const headers=upstreamHeaders(request);
  try{
   const upstream=await fetch(`${process.env.API_URL||'http://127.0.0.1:8000'}${path}`,{method,headers,body,cache:'no-store',signal:AbortSignal.timeout(20000)});
   const responseHeaders=new Headers({'Cache-Control':'no-store'});

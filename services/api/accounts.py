@@ -7,6 +7,7 @@ import re
 import secrets
 import sqlite3
 import time
+from threading import BoundedSemaphore
 import unicodedata
 import uuid
 from contextlib import contextmanager
@@ -53,6 +54,8 @@ def connect():
     CREATE TABLE IF NOT EXISTS recovery_tokens (
         token_hash TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         purpose TEXT NOT NULL,email TEXT NOT NULL,credential_hash TEXT NOT NULL,expires_at INTEGER NOT NULL);
+    CREATE TABLE IF NOT EXISTS security_budgets (key_hash TEXT PRIMARY KEY,window INTEGER NOT NULL,count INTEGER NOT NULL,expires_at INTEGER NOT NULL);
+    CREATE INDEX IF NOT EXISTS security_budget_expiry ON security_budgets(expires_at);
     CREATE TABLE IF NOT EXISTS recovery_attempts (key_hash TEXT NOT NULL,created_at INTEGER NOT NULL);
     CREATE INDEX IF NOT EXISTS recovery_attempt_key ON recovery_attempts(key_hash,created_at);
     CREATE TABLE IF NOT EXISTS usage_daily (
@@ -71,16 +74,27 @@ def connect():
     finally:
         connection.close()
 
+_password_slots=BoundedSemaphore(4)
+
 def password_hash(password,salt=None):
     salt=salt or secrets.token_bytes(16)
-    value=hashlib.scrypt(password.encode(),salt=salt,n=16384,r=8,p=1,dklen=32)
-    return 'scrypt$'+salt.hex()+'$'+value.hex()
+    with _password_slots:
+        value=hashlib.scrypt(password.encode(),salt=salt,n=32768,r=8,p=3,maxmem=64*1024*1024,dklen=32)
+    return 'scrypt$v2$'+salt.hex()+'$'+value.hex()
 
 def password_matches(password,encoded):
     try:
-        algorithm,salt,_=encoded.split('$')
-        return algorithm=='scrypt' and hmac.compare_digest(password_hash(password,bytes.fromhex(salt)),encoded)
-    except (ValueError,TypeError):
+        parts=encoded.split('$')
+        if len(parts)==3 and parts[0]=='scrypt':
+            _,salt,digest=parts;n,p=16384,1
+        elif len(parts)==4 and parts[:2]==['scrypt','v2']:
+            _,_,salt,digest=parts;n,p=32768,3
+        else:return False
+        if len(salt)!=32 or len(digest)!=64:return False
+        with _password_slots:
+            value=hashlib.scrypt(password.encode(),salt=bytes.fromhex(salt),n=n,r=8,p=p,maxmem=64*1024*1024,dklen=32)
+        return hmac.compare_digest(value.hex(),digest)
+    except (ValueError,TypeError,AttributeError):
         return False
 
 DUMMY_HASH=password_hash('dummy-password-not-an-account')
@@ -91,6 +105,8 @@ def normalize_username(value):
 def check_origin(request:Request):
     allowed={value.strip().rstrip('/') for value in os.environ.get('APP_ALLOWED_ORIGINS','http://localhost:3000,http://127.0.0.1:3000').split(',')}
     origin=request.headers.get('origin')
+    if not origin and request.headers.get('sec-fetch-site') in ('same-site','cross-site'):
+        raise HTTPException(403,'Origem não autorizada para esta operação.')
     if origin and origin.rstrip('/') not in allowed:
         raise HTTPException(403,'Origem não autorizada para esta operação.')
 
@@ -116,6 +132,11 @@ def require_user(request:Request):
         raise HTTPException(409,'A conta da sessão mudou em outra aba. Recarregue a página antes de continuar.')
     return dict(row)
 
+def require_current_session(db,request,user):
+    raw=request.cookies.get(COOKIE,'')
+    row=db.execute("SELECT 1 FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=? AND s.user_id=? AND s.expires_at>? AND u.status='active'",(hashlib.sha256(raw.encode()).hexdigest(),user['id'],int(time.time()))).fetchone()
+    if not row:raise HTTPException(401,'Sua sessão expirou. Entre novamente.')
+
 class Credentials(BaseModel):
     username:str=Field(min_length=1,max_length=80)
     password:str=Field(min_length=1,max_length=128)
@@ -137,7 +158,7 @@ def register(data:Registration,request:Request,response:Response,tasks:Backgroun
     check_auth_transport(request)
     email=None
     if data.email is not None:
-        from recovery import mail_settings, normalize_email, issue_token, deliver_email
+        from recovery import mail_settings, normalize_email, issue_token, deliver_email, limited
         mail_settings();email=normalize_email(data.email)
     username=normalize_username(data.username)
     if not re.fullmatch(r'[a-z0-9_.@+\-]{3,80}',username):
@@ -151,7 +172,7 @@ def register(data:Registration,request:Request,response:Response,tasks:Backgroun
         except sqlite3.IntegrityError:
             raise HTTPException(409,'Este usuário já está cadastrado. Entre na sua conta ou escolha outro nome.')
         issue_session(response,user_id,db)
-        if email:
+        if email and not limited(db,'verify-email:'+email):
             row=db.execute('SELECT id,password_hash FROM users WHERE id=?',(user_id,)).fetchone()
             token=issue_token(db,row,'verify',email);tasks.add_task(deliver_email,email,'verify',token)
     return {'user':{'id':user_id,'username':username,'role':'user'}}
@@ -173,6 +194,8 @@ def login(data:Credentials,request:Request,response:Response):
             db.commit()
             raise HTTPException(401,'Usuário ou senha incorretos. Confira e tente novamente.')
         db.execute('DELETE FROM login_failures WHERE username=?',(username,))
+        if not user['password_hash'].startswith('scrypt$v2$'):
+            db.execute('UPDATE users SET password_hash=? WHERE id=?',(password_hash(data.password),user['id']))
         issue_session(response,user['id'],db)
     return {'user':{'id':user['id'],'username':user['username'],'role':user['role']}}
 

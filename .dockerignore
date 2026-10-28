@@ -17,3 +17,13 @@ backups
 apps/mobile/android
 apps/mobile/ios
 apps/mobile/dist
+
+# Private credentials and signing material
+**/*.pem
+**/*.key
+**/*.pfx
+**/*.p12
+**/*.jks
+**/*.keystore
+**/.aws/
+**/.ssh/

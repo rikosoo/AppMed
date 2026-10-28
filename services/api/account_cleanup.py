@@ -39,7 +39,8 @@ def enforce_deletions(db,path):
     for start in range(0,len(ids),500):
         batch=ids[start:start+500]
         placeholders=','.join('?' for _ in batch)
-        for row in db.execute(f'SELECT id FROM users WHERE id IN ({placeholders})',batch).fetchall():
+        # Only '?' placeholders are interpolated; every identifier stays a bound value.
+        for row in db.execute(f'SELECT id FROM users WHERE id IN ({placeholders})',batch).fetchall():  # nosec B608
             purge_account(db,row['id'])
     db.commit()
 

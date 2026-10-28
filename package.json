@@ -12,7 +12,7 @@
     "typecheck": "npm run typecheck -w apps/web",
     "test:e2e": "playwright test",
     "test:api": "cd services/api && ../../.venv/bin/python -m pytest -q",
-    "test:proxy": "node --test tests/api-proxy.test.mjs",
+    "test:proxy": "node --test tests/api-proxy.test.mjs tests/proxy-security.test.mjs",
     "dev:web": "node scripts/dev.mjs --web-only",
     "dev:api": "node scripts/dev.mjs --api-only",
     "test:launcher": "node --test tests/dev-launcher.test.mjs",
@@ -29,5 +29,12 @@
   },
   "engines": {
     "node": ">=22.12.0"
+  },
+  "overrides": {
+    "@capacitor/assets": {
+      "@capacitor/cli": "8.5.3",
+      "sharp": "0.35.5"
+    },
+    "xcode": "4.0.0"
   }
 }

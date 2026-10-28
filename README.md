@@ -129,3 +129,5 @@ Nos cartões regulares, a primeira opção continua sendo a melhor por horas (me
 A otimização calcula automaticamente ao abrir a tela com dados completos e ao editar limites/prioridades. Há três prioridades para as alternativas: Menos horas, Mix equilibrado e Mais variedade. A primeira opção de referência continua ótima. O avatar e o perfil lateral abrem Minha conta, onde é possível alterar usuário/senha com confirmação da senha atual, preservando os planejamentos e encerrando as outras sessões.
 
 Recuperação de senha por e-mail confirmado, configuração SMTP e teste de entrega: [docs/PASSWORD-RECOVERY.md](docs/PASSWORD-RECOVERY.md). Campos monetários aceitam `15.000` (R$ 15.000,00), `15.000,50` e decimais simples com ponto ou vírgula; valores são guardados em centavos inteiros.
+
+Revisão de segurança, limites de produção, validações realizadas e pendências da infraestrutura: [docs/SECURITY-REVIEW.md](docs/SECURITY-REVIEW.md).
