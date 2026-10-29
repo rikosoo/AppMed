@@ -86,6 +86,26 @@ def optimizer(data: OptimizationRequest, user=Depends(require_user)):
     finally:
         _optimizer_slots.release()
 
+class LessHoursRequest(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+    works:list[Work]=Field(max_length=6)
+    expenses_cents:int=Field(strict=True,ge=0,le=1_000_000_000)
+    available_minutes:int=Field(strict=True,ge=0,le=MAX_MONTHLY_MINUTES)
+
+@app.post('/api/optimizer/less-hours')
+def optimize_less_hours(data:LessHoursRequest,user=Depends(require_user)):
+    from less_hours import less_hours
+    if len({w.id for w in data.works})!=len(data.works):
+        raise HTTPException(422,'Cada trabalho deve ter um identificador único.')
+    if limits_enabled():consume_budget('optimizer-user:'+user['id'],20,60)
+    if not _optimizer_slots.acquire(blocking=False):
+        raise HTTPException(429,'Há outros cálculos em andamento. Tente novamente em instantes.',headers={'Retry-After':'2'})
+    try:
+        result=less_hours([w.model_dump() for w in data.works],data.expenses_cents,data.available_minutes)
+        with connect() as db:record_event(db,user['id'],'optimizer_used')
+        return result
+    finally:_optimizer_slots.release()
+
 class Expense(BaseModel):
     id:str=Field(min_length=1,max_length=100)
     name:str=Field(min_length=1,max_length=100)

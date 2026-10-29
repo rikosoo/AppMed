@@ -2,7 +2,7 @@
 from itertools import product, combinations
 from math import prod
 
-ENGINE_VERSION = '1.10.0'
+ENGINE_VERSION = '1.11.0'
 MAX_MONTHLY_MINUTES = 360 * 60
 
 

@@ -55,7 +55,7 @@ def client_budget(scope):
     if path=='/api/auth/register':group,limit,seconds='register',20,900
     elif path=='/api/auth/forgot-password':group,limit,seconds='forgot',10,900
     elif path=='/api/auth/login':group,limit,seconds='login',60,300
-    elif path=='/api/optimizer':group,limit,seconds='optimizer',30,60
+    elif path.startswith('/api/optimizer'):group,limit,seconds='optimizer',30,60
     else:group,limit,seconds='write',120,60
     consume_budget('client:'+ip+':'+group,limit,seconds)
 
@@ -84,7 +84,7 @@ class ApiSecurity:
                 from accounts import check_origin
                 check_origin(Request(scope))
                 await run_in_threadpool(client_budget,scope)
-                limit=64000 if scope['path']=='/api/optimizer' else 2_000_000 if scope['path']=='/api/plan' else 10000
+                limit=64000 if scope['path'].startswith('/api/optimizer') else 2_000_000 if scope['path']=='/api/plan' else 10000
                 chunks=[];size=0
                 async def read_body():
                     nonlocal size

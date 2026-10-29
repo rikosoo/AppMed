@@ -1,6 +1,6 @@
 import {limitedBody,BodyLimitError,upstreamHeaders,ProxyAccessError} from '@/lib/proxy-security';
 export async function proxyApi(request:Request,path:string,method=request.method) {
- const limit=path.startsWith('/api/auth/')?10000:2_000_000;
+ const limit=path.startsWith('/api/auth/')?10000:path.startsWith('/api/optimizer')?64000:2_000_000;
  let body:string|undefined;
  if(!['GET','HEAD'].includes(method)){
   try{body=await limitedBody(request,limit);}catch(error){if(error instanceof BodyLimitError)return Response.json({detail:'Os dados enviados excedem o limite de tamanho.'},{status:413,headers:{'Cache-Control':'no-store'}});throw error;}
