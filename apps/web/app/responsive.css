@@ -347,3 +347,9 @@ label.work-increase{display:flex;align-items:center;gap:12px;min-height:44px;mar
 .optimizer-modes{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:24px}.optimizer-modes button{flex:1 1 200px}
 .less-hours-baseline{display:flex;flex-wrap:wrap;gap:12px 24px;margin:20px 0}.less-hours-baseline strong,.less-hours-baseline b{flex-basis:100%}.less-hours-option h3{font-size:30px;overflow-wrap:anywhere}.less-hours-option .scenario-total{flex-wrap:wrap;gap:8px}.less-hours-option small{overflow-wrap:anywhere}
 @media(max-width:650px){.less-hours-launch{font-size:13px}.less-hours-baseline{padding:20px;font-size:14px}.less-hours-option h3{font-size:28px}}
+
+.goal-realized h2{display:flex;flex-direction:column;align-items:flex-start;gap:10px}
+.goal-realized .goal-percent{display:block;max-width:100%;font-size:clamp(64px,7vw,96px);font-weight:800;line-height:1;letter-spacing:-.055em;color:#d4eda9;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.goal-realized .goal-percent>span{font-size:.6em;letter-spacing:-.03em;margin-left:3px}
+.goal-realized .goal-status{font-size:clamp(18px,2vw,24px);font-weight:500;line-height:1.3;letter-spacing:0;color:#f6f7f4}
+@media(max-width:650px){.goal-realized .goal-percent{font-size:72px}.goal-realized .goal-status{font-size:20px}}
