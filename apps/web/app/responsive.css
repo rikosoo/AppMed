@@ -328,3 +328,17 @@ footer button { min-height: 44px; font-size: 12px; }
 }
 
 label.work-increase{display:flex;align-items:center;gap:12px;min-height:44px;margin:12px 0;cursor:pointer}.work-increase input[type=checkbox]{width:20px;height:20px;min-height:20px;flex-shrink:0;margin:0;accent-color:var(--green)}
+
+/* Completed services and monthly goal tracking. */
+.goal-realized h2{font-size:clamp(1.8rem,3vw,2.7rem);line-height:1.2;margin:28px 0 20px;overflow-wrap:anywhere}
+.goal-card .goal-calculation{font-size:14px;line-height:1.7;margin:16px 0 0}
+.goal-card .goal-explanation{font-size:13px;line-height:1.6;margin:14px 0}
+.goal-card .goal-projection{font-size:15px;margin:0 0 22px}
+.goal-realized,.goal-explanation,.goal-projection{position:relative;z-index:1}
+.completion-card{margin:24px 0}.completion-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.completion-item{min-width:0;padding:16px;border:1px solid #e3e8dd;border-radius:14px}.completion-item h3{margin:0 0 10px;overflow-wrap:anywhere;font-size:16px}
+.work-completion{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:16px}
+.completion-summary{min-width:0;flex:1 1 140px}.completion-summary strong,.completion-summary small{display:block;overflow-wrap:anywhere}.completion-summary strong{font-size:14px}.completion-summary small{font-size:12px;color:#65735d;margin-top:5px}
+.completion-buttons{display:flex;gap:8px}.completion-buttons button,.completion-monthly{min-height:44px;border:1px solid #cbd8bf;border-radius:10px;background:#f3f7ed;color:#194a3d;display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px}
+.completion-buttons button{min-width:44px}.completion-buttons button:disabled{opacity:.4;cursor:default}.completion-monthly{font-size:13px}.completion-monthly.is-complete{background:#e2efd4}.completion-buttons button:focus-visible,.completion-monthly:focus-visible{outline:2px solid #194a3d;outline-offset:3px}
+@media(max-width:650px){.completion-list{grid-template-columns:1fr}.completion-card{padding:20px}.goal-card .goal-calculation,.goal-card .goal-explanation{font-size:12px}.goal-realized h2{font-size:30px}.completion-card .section-heading{align-items:flex-start}.completion-card .section-heading p{line-height:1.6}}

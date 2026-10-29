@@ -35,10 +35,13 @@ class Work(BaseModel):
     net_cents: int = Field(strict=True, gt=0, le=100_000_000)
     minutes: int = Field(strict=True, ge=1, le=MAX_MONTHLY_MINUTES)
     quantity: int = Field(strict=True, ge=0, le=1000)
+    completed: int = Field(default=0, strict=True, ge=0, le=1000)
     max_extra: int = Field(strict=True, ge=0, le=100)
 
     @model_validator(mode='after')
     def validate_estimated_tax(self):
+        if self.type=='Serviço mensal' and self.completed>1:
+            raise ValueError('Serviço mensal só pode ser concluído uma vez no mês.')
         if self.type=='Serviço mensal' and (self.quantity!=1 or self.max_extra!=0):
             raise ValueError('Serviço mensal deve contar uma vez no mês e não permite unidades extras.')
         if self.gross_cents is None and self.tax_regime is None:
