@@ -1,7 +1,7 @@
 import {test,expect} from '@playwright/test';
 import {accountLogin} from './helpers/auth';
 test('privacy, support and deletion instructions are public',async({page})=>{
- for(const [path,title] of [['/privacidade','Política de privacidade'],['/excluir-conta','Excluir sua conta do FinanceMed AI'],['/suporte','Contato Suporte']]){
+ for(const [path,title] of [['/privacidade','Política de privacidade'],['/excluir-conta','Excluir sua conta do Axterix Med'],['/suporte','Contato Suporte']]){
   await page.goto(path);await expect(page.getByRole('heading',{level:1,name:title})).toBeVisible();await expect(page.locator('a[href^="mailto:"]').first()).toHaveAttribute('href',/contact@dresslikeme.store/);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
  }

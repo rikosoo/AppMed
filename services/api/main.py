@@ -14,7 +14,7 @@ from finance import after_tax
 from engine import ENGINE_VERSION, MAX_MONTHLY_MINUTES, optimize
 
 production=os.environ.get('SESSION_COOKIE_SECURE','false').lower()=='true'
-app = FastAPI(title='FinanceMed AI', version='0.2.0',docs_url=None if production else '/docs',redoc_url=None if production else '/redoc',openapi_url=None if production else '/openapi.json')
+app = FastAPI(title='Axterix Med', version='0.2.0',docs_url=None if production else '/docs',redoc_url=None if production else '/redoc',openapi_url=None if production else '/openapi.json')
 app.add_middleware(ApiSecurity)
 
 @app.exception_handler(RequestValidationError)

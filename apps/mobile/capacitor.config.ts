@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 const config:CapacitorConfig={
  appId:'club.hard75.financemed',
- appName:'FinanceMed AI',
+ appName:'Axterix Med',
  webDir:'dist',
  backgroundColor:'#f6f7f4',
  loggingBehavior:'none',

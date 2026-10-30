@@ -1,4 +1,4 @@
-# FinanceMed AI — Especificação Completa do Produto (PRD + Blueprint Técnico)
+# Axterix Med — Especificação Completa do Produto (PRD + Blueprint Técnico)
 
 **Versão:** 1.0  
 **Data:** 21/10/2026  
@@ -15,7 +15,7 @@
 
 ## 1. Resumo executivo
 
-O FinanceMed AI é um SaaS de planejamento financeiro e otimização de agenda para médicos. Diferentemente de uma calculadora estática, acompanha resultados reais versus projetados, combina múltiplas fontes de renda, estima demanda e capacidade, projeta sazonalidade e recomenda cenários de aumento de renda ou redução de horas. Deve ser útil no primeiro dia e todos os meses seguintes.
+O Axterix Med é um SaaS de planejamento financeiro e otimização de agenda para médicos. Diferentemente de uma calculadora estática, acompanha resultados reais versus projetados, combina múltiplas fontes de renda, estima demanda e capacidade, projeta sazonalidade e recomenda cenários de aumento de renda ou redução de horas. Deve ser útil no primeiro dia e todos os meses seguintes.
 
 ### 1.1 Perguntas que o produto precisa responder
 
@@ -889,7 +889,7 @@ Valores **hipotéticos para validação**, sem alegação de pesquisa de mercado
 ## 23. Prompt inicial para Codex (copiar e colar)
 
 ```text
-Você é um engenheiro full-stack sênior e arquiteto de software. Leia integralmente o arquivo FinanceMed_AI_PRD_Completo.md e implemente o FinanceMed AI por etapas, sem omitir regras de negócio. Comece pela Sprint 0 e Sprint 1; NÃO tente fazer todas as funcionalidades numa única entrega.
+Você é um engenheiro full-stack sênior e arquiteto de software. Leia integralmente o arquivo docs/PRD.md e implemente o Axterix Med por etapas, sem omitir regras de negócio. Comece pela Sprint 0 e Sprint 1; NÃO tente fazer todas as funcionalidades numa única entrega.
 
 Stack: Next.js + TypeScript (PWA), FastAPI + Python, PostgreSQL, SQLAlchemy/Alembic, testes Pytest/Playwright. Estruture packages/finance_engine e packages/optimizer_engine; OR-Tools CP-SAT quando chegar à sprint do otimizador.
 

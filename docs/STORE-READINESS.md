@@ -19,7 +19,7 @@ O endereço de contato foi informado pelo responsável; a disponibilidade da cai
 
 ## Ícones e abertura
 
-Os recursos Android e iOS agora usam o símbolo verde do FinanceMed existente no site. A fonte está em `apps/mobile/assets/logo.svg`. Para regenerar:
+Os recursos Android e iOS agora usam o símbolo verde do Axterix Med existente no site. A fonte está em `apps/mobile/assets/logo.svg`. Para regenerar:
 
 ```bash
 npm run mobile:assets
@@ -45,7 +45,7 @@ O workflow **Mobile test builds** é manual: não roda em cada push e não publi
 1. No repositório GitHub, abra Actions → Mobile test builds → Run workflow.
 2. Escolha `android`, `ios` ou `both`, na branch main.
 3. Aguarde terminar e abra o resultado da execução.
-4. Baixe o artefato `FinanceMed-Android-debug` ou `FinanceMed-iOS-simulator`.
+4. Baixe o artefato `Axterix-Med-Android-debug` ou `Axterix-Med-iOS-simulator`.
 
 Android gera APK debug para testes (não AAB de publicação). iOS compila em runner macOS e gera um `.app` para simulador, **não IPA para iPhone**. Não precisa de certificados Apple para compilar esse simulador. O artefato exige Mac/simulador para executar; em Windows é possível acompanhar o log de compilação. O workflow foi preparado, mas uma execução remota bem-sucedida ainda deve ser confirmada no GitHub.
 

@@ -41,9 +41,9 @@ def deliver_email(email,purpose,token):
         origin,host,port,sender,mode=mail_settings()
         link=f'{origin}/recuperar-senha#{purpose}={token}'
         message=EmailMessage();message['From']=sender;message['To']=email
-        message['Subject']='Confirme seu e-mail • FinanceMed' if purpose=='verify' else 'Recupere sua senha • FinanceMed'
+        message['Subject']='Confirme seu e-mail • Axterix Med' if purpose=='verify' else 'Recupere sua senha • Axterix Med'
         duration='24 horas' if purpose=='verify' else '30 minutos'
-        message.set_content(f'{"Confirme seu e-mail de recuperação" if purpose=="verify" else "Escolha uma nova senha"}:\n\n{link}\n\nEste link é de uso único e expira em {duration}. Se você não solicitou, ignore esta mensagem. Sua senha não foi alterada.\nFinanceMed • Contato Suporte')
+        message.set_content(f'{"Confirme seu e-mail de recuperação" if purpose=="verify" else "Escolha uma nova senha"}:\n\n{link}\n\nEste link é de uso único e expira em {duration}. Se você não solicitou, ignore esta mensagem. Sua senha não foi alterada.\nAxterix Med • Contato Suporte')
         client=smtplib.SMTP_SSL if mode=='ssl' else smtplib.SMTP
         kwargs={'timeout':15}
         if mode=='ssl':kwargs['context']=ssl.create_default_context()

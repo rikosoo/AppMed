@@ -34,7 +34,7 @@ jobs:
         working-directory: apps/mobile/android
       - uses: actions/upload-artifact@v4
         with:
-          name: FinanceMed-Android-debug
+          name: Axterix-Med-Android-debug
           path: apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 7
@@ -57,10 +57,10 @@ jobs:
           -configuration Debug -sdk iphonesimulator
           -destination 'generic/platform=iOS Simulator'
           -derivedDataPath build/ios-simulator CODE_SIGNING_ALLOWED=NO build
-      - run: ditto -c -k --keepParent build/ios-simulator/Build/Products/Debug-iphonesimulator/App.app build/FinanceMed-iOS-simulator.zip
+      - run: ditto -c -k --keepParent build/ios-simulator/Build/Products/Debug-iphonesimulator/App.app build/Axterix-Med-iOS-simulator.zip
       - uses: actions/upload-artifact@v4
         with:
-          name: FinanceMed-iOS-simulator
-          path: build/FinanceMed-iOS-simulator.zip
+          name: Axterix-Med-iOS-simulator
+          path: build/Axterix-Med-iOS-simulator.zip
           if-no-files-found: error
           retention-days: 7

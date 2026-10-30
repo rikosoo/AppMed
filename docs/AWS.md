@@ -1,4 +1,4 @@
-# Publicar o FinanceMed AI na AWS e atualizar o servidor
+# Publicar o Axterix Med na AWS e atualizar o servidor
 
 Este guia usa **AWS Lightsail + Ubuntu 24.04 LTS + Docker Compose + Caddy**. O Lightsail é uma máquina virtual gerenciada pela AWS. A interface Next.js e a API FastAPI ficam em contêineres; o Caddy fornece HTTPS automático. Não use `npm run dev` no servidor publicado.
 
@@ -68,7 +68,7 @@ APP_DOMAIN=finance.seudominio.com.br
 APP_ORIGIN=https://finance.seudominio.com.br
 ```
 
-Use somente o nome do domínio em APP_DOMAIN e a origem HTTPS em APP_ORIGIN, sem /admin. O login próprio do FinanceMed substitui a janela externa de senha do Caddy; as variáveis BASIC_AUTH antigas não são mais utilizadas. No Nano, Ctrl+O e Enter salvam, Ctrl+X sai.
+Use somente o nome do domínio em APP_DOMAIN e a origem HTTPS em APP_ORIGIN, sem /admin. O login próprio do Axterix Med substitui a janela externa de senha do Caddy; as variáveis BASIC_AUTH antigas não são mais utilizadas. No Nano, Ctrl+O e Enter salvam, Ctrl+X sai.
 
 A credencial `INTERNAL_PROXY_TOKEN` é criada pelo comando abaixo, fica somente no servidor e é compartilhada pelos três serviços. O valor não é exibido, não deve ser commitado e não é uma senha adicional para os usuários.
 
@@ -86,7 +86,7 @@ sudo docker compose --env-file deploy/.env -f deploy/compose.prod.yml ps
 
 A primeira compilação pode demorar. API, interface e Caddy devem ficar `healthy`.
 
-Abra **https://finance.seudominio.com.br** no navegador. Crie sua conta individual pelo login do FinanceMed.
+Abra **https://finance.seudominio.com.br** no navegador. Crie sua conta individual pelo login do Axterix Med.
 
 Para conferir pelo SSH, substitua o domínio:
 
@@ -167,7 +167,7 @@ sudo docker compose --env-file deploy/.env -f deploy/compose.prod.yml logs --tai
 - **Não abre o domínio:** confira o registro A, IP estático e portas 80/443.
 - **Não emite certificado:** confira a propagação do DNS e os logs do Caddy. Não desative a verificação HTTPS para contornar o problema.
 - **Caddy falha ao iniciar:** confira APP_DOMAIN, DNS e os logs do Caddy.
-- **401 na API:** é necessário entrar na conta do FinanceMed. Se ainda aparecer uma janela de senha do navegador, o Caddy em execução ainda está na configuração antiga.
+- **401 na API:** é necessário entrar na conta do Axterix Med. Se ainda aparecer uma janela de senha do navegador, o Caddy em execução ainda está na configuração antiga.
 - **Erro no otimizador:** confira `web` e `api`; `API_URL` deve continuar `http://api:8000` dentro dos contêineres.
 - **Atualização rejeitada por alterações locais:** preserve/revise o que mudou antes de continuar. `.env` é ignorado e não exige commit.
 - **Compilação encerrada por falta de memória:** aumente a RAM da instância antes de repetir a compilação.

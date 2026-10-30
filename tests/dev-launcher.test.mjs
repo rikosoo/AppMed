@@ -13,7 +13,7 @@ test('Unix uses the venv interpreter and python3',()=>{
 test('Next resolves from the web workspace, independent of dependency hoisting',()=>{
  assert.match(nextEntrypoint(process.cwd()),/next[/\\]dist[/\\]bin[/\\]next$/);
 });
-test('only the expected FinanceMed API version can be reused',()=>{
+test('only the expected Axterix Med API version can be reused',()=>{
  assert.equal(apiMatches({status:'ok',engine:'1.1.0'},'1.1.0'),true);
  assert.equal(apiMatches({status:'ok',engine:'1.0.0'},'1.1.0'),false);
  assert.equal(apiMatches({status:'error',engine:'1.1.0'},'1.1.0'),false);

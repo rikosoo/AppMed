@@ -1,4 +1,4 @@
-# FinanceMed AI
+# Axterix Med
 
 MVP web responsivo para planejamento financeiro de médicos. Interface em português, navegação inferior no celular e lateral no desktop. Contas individuais e planejamentos persistem em SQLite no servidor. Consulte [domínio e persistência](docs/DOMINIO.md) e [base administrativa](docs/ADMIN.md).
 
@@ -37,7 +37,7 @@ npm run dev
 
 O iniciador foi escrito para Windows, macOS e Linux; não exige Bash ou WSL. A execução real e a recuperação de dependências foram validadas no cloud Linux; o caminho e a seleção do Python no Windows têm testes automatizados, sem uma máquina Windows neste ambiente. O comando inicia Next.js na porta 3000 e FastAPI na porta 8000. A interface encaminha `/api/*` para a API. Para hospedagem separada, configure `API_URL` no ambiente do Next.js antes de compilar. A API escuta somente em loopback por padrão; não tem autenticação e não deve ser exposta diretamente à internet.
 
-Se a porta 3000 estiver ocupada, encerre a interface antiga com Ctrl+C antes de iniciar. Uma API já ativa na porta 8000 só é reutilizada se responder como FinanceMed com a versão esperada; outros serviços ou versões antigas geram orientação para parar o servidor. O iniciador encerra apenas os processos que ele criou.
+Se a porta 3000 estiver ocupada, encerre a interface antiga com Ctrl+C antes de iniciar. Uma API já ativa na porta 8000 só é reutilizada se responder como Axterix Med com a versão esperada; outros serviços ou versões antigas geram orientação para parar o servidor. O iniciador encerra apenas os processos que ele criou.
 
 Para executar separadamente em dois terminais: `npm run dev:api` e `npm run dev:web`. O comando `npm run dev --workspace=apps/web` também inicia somente a interface; o cálculo depende da API estar ativa.
 
@@ -118,7 +118,7 @@ Veja o passo a passo em [docs/AWS.md](docs/AWS.md). Os arquivos em `deploy/` ini
 
 A base Capacitor compartilha a interface com a web e a empacota localmente. Consulte [MOBILE.md](docs/MOBILE.md) para sincronizar, abrir no Android Studio/Xcode e testar. `npm run mobile:sync` gera os assets dos dois projetos. A publicação e os testes em aparelhos ainda são etapas separadas.
 
-O deploy agora usa somente o login próprio do FinanceMed; a janela externa de senha do Caddy foi retirada para permitir o transporte nativo de sessão. Atualize o servidor antes de testar os aplicativos.
+O deploy agora usa somente o login próprio do Axterix Med; a janela externa de senha do Caddy foi retirada para permitir o transporte nativo de sessão. Atualize o servidor antes de testar os aplicativos.
 
 ## Preparação para as lojas
 

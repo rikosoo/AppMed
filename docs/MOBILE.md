@@ -1,4 +1,4 @@
-# FinanceMed AI — Android e iOS (etapa 3)
+# Axterix Med — Android e iOS (etapa 3)
 
 A interface é compilada pelo Vite e empacotada nos projetos Capacitor. Não utiliza `server.url`, iframe ou carregamento remoto da interface. O backend Next/FastAPI continua na EC2; o aplicativo chama os mesmos endpoints por HTTPS pelo transporte HTTP nativo do Capacitor, com cookies de sessão. Não há senha, token ou credencial embutidos no pacote. Uma conta criada no site usa os mesmos dados no aplicativo; é necessário entrar em cada dispositivo.
 
@@ -30,7 +30,7 @@ Use somente a origem HTTPS, sem `/admin`, credenciais ou parâmetros. Essa vari�
 
 ## Atualizar o servidor antes de testar
 
-A proteção externa Basic Auth foi retirada do Caddy: a janela de usuário/senha do navegador não funciona no transporte nativo. O login próprio do FinanceMed continua obrigatório para dados, cálculos e administração; o cadastro está disponível publicamente. As variáveis BASIC_AUTH antigas podem permanecer no `.env`, mas deixam de ser utilizadas. Não inclua essas credenciais no aplicativo.
+A proteção externa Basic Auth foi retirada do Caddy: a janela de usuário/senha do navegador não funciona no transporte nativo. O login próprio do Axterix Med continua obrigatório para dados, cálculos e administração; o cadastro está disponível publicamente. As variáveis BASIC_AUTH antigas podem permanecer no `.env`, mas deixam de ser utilizadas. Não inclua essas credenciais no aplicativo.
 
 No SSH da EC2, após o commit estar disponível:
 
@@ -105,3 +105,7 @@ Auditoria de responsividade (27/10/2026): testes em Chromium nas larguras 320, 3
 Em telas menores que 1024px, os resultados ficam em duas faixas horizontais independentes: cenários dentro dos limites e cenários com limites a revisar. Deslize para comparar; parte do próximo cartão permanece visível. No desktop, as faixas voltam ao formato de grade. A página mantém rolagem vertical e as faixas também podem receber foco pelo teclado.
 
 O tipo Serviço mensal usa o valor bruto mensal, o regime PF/PJ e as horas totais do trabalho no mês. Conta uma vez na renda e nas horas previstas, sem unidades extras. Nos demais trabalhos, desmarcar “Posso fazer unidades extras deste trabalho” salva o limite em zero: a renda prevista continua entrando, mas o trabalho fica excluído das sugestões adicionais normais e ampliadas. O limite zero informado manualmente tem o mesmo efeito.
+
+## Nome do aplicativo
+
+O nome exibido é **Axterix Med** no Android, iOS, site e instalação pelo navegador. Os identificadores técnicos anteriores (`club.hard75.financemed`, chaves locais, cookies, cabeçalhos e nomes de volumes) permanecem para manter atualizações e dados compatíveis. Não renomeie os volumes ou o arquivo SQLite para aplicar a nova marca. A variável `FINANCEMED_API_ORIGIN` continua válida e o domínio atual permanece o mesmo.
