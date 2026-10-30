@@ -1,4 +1,5 @@
 'use client';
+import BrandLogo from '@/components/brand-logo';
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { ArrowLeft, RefreshCw, ShieldCheck, Users } from 'lucide-react';
 import AdminCharts, { type DailyMetric } from '@/components/admin-charts';
@@ -31,7 +32,7 @@ function AdminDashboard(){
  function find(event:FormEvent){event.preventDefault();setOffset(0);setSearch(query.trim());}
  async function changeStatus(){if(!selected)return;setSaving(true);setError('');try{await call(`users/${selected.id}/status`,{method:'PATCH',body:JSON.stringify({status:selected.status==='active'?'blocked':'active'})});setNotice(selected.status==='active'?'Usuário bloqueado e sessões encerradas.':'Usuário desbloqueado. Ele pode entrar novamente.');setSelected(null);await load();}catch(e){setError(e instanceof Error?e.message:'Falha ao alterar conta.');}finally{setSaving(false);}}
  return <main className="admin-shell"><header className="admin-header"><a href="/"><ArrowLeft size={17}/> Voltar ao aplicativo</a><span><ShieldCheck size={17}/> Administração</span></header>
- <div className="admin-title"><div><div className="eyebrow">AXTERIX MED</div><h1>Visão do aplicativo</h1><p>Acompanhe o crescimento e o uso das contas.</p></div><button className="outline-button" onClick={()=>void load()} disabled={loading||saving}><RefreshCw size={16}/> Atualizar</button></div>
+ <div className="admin-title"><div><div className="admin-brand"><BrandLogo/></div><h1>Visão do aplicativo</h1><p>Acompanhe o crescimento e o uso das contas.</p></div><button className="outline-button" onClick={()=>void load()} disabled={loading||saving}><RefreshCw size={16}/> Atualizar</button></div>
  {error&&<div className="alert error" role="alert">{error}</div>}{notice&&<p className="admin-notice" role="status">{notice}</p>}
  {forbidden?<section className="admin-panel"><h2>Acesso restrito</h2><p>Entre com uma conta autorizada pelo responsável do servidor.</p><a href="/">Voltar ao aplicativo</a></section>:<>
  {loading&&<p role="status" className="admin-loading">Carregando informações…</p>}

@@ -8,7 +8,7 @@
     "ios": "cap open ios",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1",
-    "assets": "capacitor-assets generate --android --ios --iconBackgroundColor \"#123e35\" --iconBackgroundColorDark \"#123e35\" --splashBackgroundColor \"#f6f7f4\" --splashBackgroundColorDark \"#123e35\""
+    "assets": "capacitor-assets generate --android --ios --iconBackgroundColor \"#f6f7f4\" --iconBackgroundColorDark \"#f6f7f4\" --splashBackgroundColor \"#f6f7f4\" --splashBackgroundColorDark \"#123e35\""
   },
   "devDependencies": {
     "@capacitor/assets": "3.0.5",

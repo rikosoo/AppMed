@@ -1,10 +1,11 @@
 'use client';
+import BrandLogo from '@/components/brand-logo';
 import MoneyInput from '@/components/money-input';
 import MonthlyHoursReference from '@/components/monthly-hours-reference';
 import WorkFields from '@/components/work-fields';
 import { parseWorkDuration } from '@/lib/work-duration';
 import { useState, type FormEvent } from 'react';
-import { Activity, ArrowLeft, ArrowRight, BriefcaseBusiness, Check, Plus, ReceiptText, Target, Trash2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BriefcaseBusiness, Check, Plus, ReceiptText, Target, Trash2 } from 'lucide-react';
 import { paymentFields } from '@/lib/finance';
 import { cents, currency, emptyPlan, MAX_MONTHLY_HOURS, type Plan, type Work, type Expense } from '@/lib/model';
 
@@ -39,7 +40,7 @@ export default function Onboarding({ month, onComplete, onBack }: { month: strin
     const f = new FormData(event.currentTarget);
     onComplete({ ...emptyPlan(), works, expenses, target: cents(String(f.get('target'))), available: Math.round(Number(f.get('available'))*60), onboardingComplete: true });
   }
-  return <main className="setup-shell"><header className="setup-header"><span className="brand"><span className="brand-icon"><Activity size={24}/></span><span>Axterix Med</span></span><span>Planejamento de {month.split('-').reverse().join('/')}</span></header>
+  return <main className="setup-shell"><header className="setup-header"><span className="brand"><BrandLogo/></span><span>Planejamento de {month.split('-').reverse().join('/')}</span></header>
     <div className="setup-intro"><div className="eyebrow">VAMOS COMEÇAR DO SEU JEITO</div><h1>Conte um pouco sobre sua rotina.</h1><p>Em três passos, seu planejamento ganha os seus números.</p></div>
     <ol className="setup-steps">{labels.map((label, index)=><li key={label} className={index===step?'current':index<step?'completed':''} aria-current={index===step?'step':undefined}><span>{index<step?<Check size={16}/>:index+1}</span>{label}</li>)}</ol>
     <section className="card setup-card"><div className="section-heading"><div><h2>{['Como você ganha sua renda?','Quais são suas despesas?','Aonde você quer chegar?'][step]}</h2><p>{['Adicione pelo menos um trabalho. Você pode cadastrar outros depois.','Informe custos ainda não descontados do ganho por unidade.','Escolha sua renda líquida desejada e o total de horas disponíveis.'][step]}</p></div>{step===0?<BriefcaseBusiness/>:step===1?<ReceiptText/>:<Target/>}</div>

@@ -19,9 +19,10 @@ O endereço de contato foi informado pelo responsável; a disponibilidade da cai
 
 ## Ícones e abertura
 
-Os recursos Android e iOS agora usam o símbolo verde do Axterix Med existente no site. A fonte está em `apps/mobile/assets/logo.svg`. Para regenerar:
+Os recursos Android e iOS agora usam o símbolo azul/turquesa do Axterix Med, sem o fundo azul da imagem original. A fonte transparente está em `apps/mobile/assets/logo.png`; a marca completa está em `apps/web/public/brand/axterix-med.png`. Para regenerar:
 
 ```bash
+node scripts/build-brand-assets.mjs
 npm run mobile:assets
 npm run mobile:sync
 ```
@@ -79,3 +80,5 @@ Sem anúncios, compras, rastreamento publicitário ou coleta de localização/c�
 ## Antes da etapa 5
 
 Confirmar identificador definitivo `club.hard75.financemed`, nome do app, titular legal, política revisada, suporte funcional, screenshots e gráfico de destaque. Criar contas Google Play Console e Apple Developer. Preparar AAB/Archive de release assinados, versões/build numbers, classificação etária e credenciais de uma conta exclusiva de revisão sem dados reais. Guardar chaves fora do Git. A aprovação depende de cada loja; nada foi enviado automaticamente.
+
+A versão horizontal usa letras escuras para leitura em fundos claros. O favicon usa apenas o símbolo. Os arquivos de origem têm transparência; o ícone de loja iOS usa fundo claro opaco, obrigatório para esse formato. O Vite inclui os mesmos recursos locais do site no pacote móvel.
